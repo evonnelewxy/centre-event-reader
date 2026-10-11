@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Reader</title>
+<style>
+  :root { --ink:#1f2937; --muted:#6b7280; --accent:#2563eb; --accent-dark:#1d4ed8; --soft:#eff6ff; --line:#d1d5db; --warn:#92400e; --warnbg:#fef3c7; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; color:var(--ink); background:#fff;
+         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans","Noto Sans SC","Noto Sans Tamil",sans-serif; }
+  h1 { font-size:1.6rem; margin:0 0 12px; }
+  .hint { color:var(--muted); font-size:.95rem; margin:0 0 16px; }
+
+  /* ---------- Reader (seniors) ---------- */
+  .tabs { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+  .tab { font-size:1.4rem; padding:14px 22px; min-height:60px; border-radius:14px; border:3px solid var(--accent);
+         background:#fff; color:var(--accent); cursor:pointer; font-weight:600; }
+  .tab[aria-pressed="true"] { background:var(--accent); color:#fff; }
+  .msg { font-size:2rem; line-height:1.5; padding:20px; background:var(--soft); border-radius:16px; margin-bottom:16px; white-space:pre-wrap; }
+  .listen { width:100%; font-size:2rem; font-weight:700; padding:20px; min-height:84px; border:none; border-radius:18px;
+            background:var(--accent); color:#fff; cursor:pointer; }
+  .listen:active { background:var(--accent-dark); }
+  .listen.playing { background:#b91c1c; }
+  .note { margin-top:12px; padding:10px 14px; border-radius:10px; background:var(--warnbg); color:var(--warn); font-size:1rem; }
+
+  /* ---------- Builder (staff) ---------- */
+  label { display:block; font-weight:600; margin:14px 0 4px; }
+  input[type=text], textarea { width:100%; padding:10px 12px; font-size:1rem; font-family:inherit; border:1px solid var(--line); border-radius:8px; }
+  textarea { min-height:84px; resize:vertical; }
+  .row { display:flex; gap:8px; align-items:flex-start; }
+  .row > textarea { flex:1; }
+  button.small { padding:8px 12px; font-size:.95rem; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; white-space:nowrap; }
+  button.primary { padding:12px 18px; font-size:1rem; font-weight:600; border:none; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; margin-top:16px; margin-right:8px; }
+  button.primary:disabled { opacity:.6; cursor:wait; }
+  .status { font-size:.9rem; color:var(--muted); margin-top:8px; min-height:1.2em; }
+  .out { margin-top:20px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
+  .out input { margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================================================
+   CONFIG - add or remove languages here.
+   code : short key used inside the link
+   label: what appears on the button (write it in that language)
+   bcp  : voice language tag used for text-to-speech
+   mm   : language code used by the free MyMemory translation API
+   ============================================================ */
+const LANGS = [
+  { code: 'en', label: 'English',       bcp: 'en-SG', mm: 'en'    },
+  { code: 'zh', label: '中文',           bcp: 'zh-CN', mm: 'zh-CN' },
+  { code: 'ms', label: 'Bahasa Melayu', bcp: 'ms-MY', mm: 'ms'    },
+  { code: 'ta', label: 'தமிழ்',          bcp: 'ta-IN', mm: 'ta'    }
+];
+const SPEECH_RATE = 0.85;   // slightly slower than normal, easier for seniors
+
+/* ---------- helpers ---------- */
+const $ = (id) => document.getElementById(id);
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  Object.entries(props || {}).forEach(([k, v]) => {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  });
+  kids.forEach(k => e.append(k));
+  return e;
+}
+function encodeData(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodeData(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bin = atob(s);
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+/* ---------- text-to-speech (built into the browser, free, no key) ---------- */
+const hasTTS = 'speechSynthesis' in window;
+let voices = [];
+function loadVoices() { voices = hasTTS ? speechSynthesis.getVoices() : []; }
+if (hasTTS) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+function findVoice(bcp) {
+  const want = bcp.toLowerCase();
+  const norm = v => v.lang.replace('_', '-').toLowerCase();
+  return voices.find(v => norm(v) === want)
+      || voices.find(v => norm(v).split('-')[0] === want.split('-')[0]);
+}
+function speak(text, bcp, onEnd) {
+  if (!hasTTS) return false;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = findVoice(bcp);
+  if (!v) { if (onEnd) onEnd(); return false; }   // no voice installed for this language
+  u.voice = v; u.lang = v.lang; u.rate = SPEECH_RATE;
+  u.onend = u.onerror = () => { if (onEnd) onEnd(); };
+  speechSynthesis.speak(u);
+  return true;
+}
+function stopSpeaking() { if (hasTTS) speechSynthesis.cancel(); }
+
+/* ---------- translation (free MyMemory API, used by staff only) ---------- */
+function chunkText(text, max = 400) {            // API limit is about 500 bytes per request
+  const parts = text.match(/[^.!?。！？\n]+[.!?。！？]*\s*/g) || [text];
+  const chunks = []; let cur = '';
+  parts.forEach(p => {
+    if ((cur + p).length > max && cur) { chunks.push(cur); cur = p; } else cur += p;
+  });
+  if (cur.trim()) chunks.push(cur);
+  return chunks;
+}
+async function translate(text, target) {
+  const out = [];
+  for (const chunk of chunkText(text)) {
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=en|' + encodeURIComponent(target);
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json.responseStatus !== 200) throw new Error(json.responseDetails || 'Translation failed');
+    out.push(json.responseData.translatedText);
+  }
+  return out.join(' ').trim();
+}
+
+/* ============================================================
+   READER VIEW  (what seniors see inside Notion)
+   ============================================================ */
+function renderReader(data) {
+  const app = $('app'); app.innerHTML = '';
+  const avail = LANGS.filter(l => data.texts && (data.texts[l.code] || '').trim());
+  if (!avail.length) { app.append(el('p', {}, 'No text for this event.')); return; }
+
+  let current = avail[0];
+  if (data.title) app.append(el('h1', {}, data.title));
+
+  const tabs = el('div', { class: 'tabs', role: 'group' });
+  const msg  = el('div', { class: 'msg' });
+  const btn  = el('button', { class: 'listen', type: 'button' });
+  const note = el('div', { class: 'note', hidden: '' });
+
+  function resetBtn() { btn.classList.remove('playing'); btn.textContent = '🔊  Listen'; }
+  function showLang(l) {
+    stopSpeaking(); resetBtn(); note.hidden = true;
+    current = l;
+    msg.textContent = data.texts[l.code];
+    msg.lang = l.bcp;
+    [...tabs.children].forEach(t => t.setAttribute('aria-pressed', t.dataset.code === l.code));
+  }
+  avail.forEach(l => {
+    const t = el('button', { class: 'tab', type: 'button', 'data-code': l.code, onclick: () => showLang(l) }, l.label);
+    tabs.append(t);
+  });
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('playing')) { stopSpeaking(); resetBtn(); return; }
+    loadVoices();
+    btn.classList.add('playing'); btn.textContent = '⏹  Stop';
+    const ok = speak(data.texts[current.code], current.bcp, resetBtn);
+    if (!ok) {
+      resetBtn();
+      note.textContent = 'This device has no voice installed for this language. Please ask the staff for help.';
+      note.hidden = false;
+    }
+  });
+
+  app.append(tabs, msg, btn, note);
+  showLang(current);
+}
+
+/* ============================================================
+   BUILDER VIEW  (for staff - open the page with no ?d= in the link)
+   ============================================================ */
+function renderBuilder(prefill) {
+  const app = $('app'); app.innerHTML = '';
+  prefill = prefill || { title: '', texts: {} };
+
+  app.append(
+    el('h1', {}, 'Event reader - link builder'),
+    el('p', { class: 'hint' }, 'For staff. Type the English message, auto-translate, check each language, then create the link and paste it into a Notion /embed block.')
+  );
+
+  app.append(el('label', { for: 'title' }, 'Event name (optional, shown as heading)'));
+  const title = el('input', { type: 'text', id: 'title', placeholder: 'e.g. Rummikub Session' });
+  title.value = prefill.title || '';
+  app.append(title);
+
+  const fields = {};
+  LANGS.forEach(l => {
+    app.append(el('label', { for: 'txt-' + l.code }, l.label + (l.code === 'en' ? ' (type this one)' : '')));
+    const ta = el('textarea', { id: 'txt-' + l.code, lang: l.bcp });
+    ta.value = (prefill.texts && prefill.texts[l.code]) || '';
+    fields[l.code] = ta;
+    const test = el('button', { class: 'small', type: 'button', onclick: () => {
+      if (!ta.value.trim()) return;
+      loadVoices();
+      if (!speak(ta.value, l.bcp)) status.textContent = 'No voice for ' + l.label + ' on this device.';
+    } }, '🔊 Test');
+    app.append(el('div', { class: 'row' }, ta, test));
+  });
+
+  const status = el('div', { class: 'status' });
+  const tbtn = el('button', { class: 'primary', type: 'button' }, 'Auto-translate from English');
+  tbtn.addEventListener('click', async () => {
+    const en = fields.en.value.trim();
+    if (!en) { status.textContent = 'Type the English text first.'; return; }
+    tbtn.disabled = true;
+    try {
+      for (const l of LANGS.filter(x => x.code !== 'en')) {
+        status.textContent = 'Translating to ' + l.label + '...';
+        fields[l.code].value = await translate(en, l.mm);
+      }
+      status.textContent = 'Done. Machine translation can be wrong - please have someone who speaks each language check it.';
+    } catch (e) {
+      status.textContent = 'Translation failed (' + e.message + '). You can type the translations in by hand.';
+    }
+    tbtn.disabled = false;
+  });
+
+  const out = el('div', { class: 'out', hidden: '' });
+  const linkBox = el('input', { type: 'text', readonly: '' });
+  const copyBtn = el('button', { class: 'small', type: 'button' }, 'Copy link');
+  const openLink = el('a', { href: '#', target: '_blank', rel: 'noopener' }, 'Open to preview');
+  copyBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(linkBox.value); }
+    catch (e) { linkBox.select(); document.execCommand('copy'); }
+    copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy link', 1500);
+  });
+  out.append(el('strong', {}, 'Paste this into a Notion /embed block:'), linkBox, copyBtn, ' ', openLink);
+
+  const cbtn = el('button', { class: 'primary', type: 'button' }, 'Create link');
+  cbtn.addEventListener('click', () => {
+    const texts = {};
+    LANGS.forEach(l => { const v = fields[l.code].value.trim(); if (v) texts[l.code] = v; });
+    if (!Object.keys(texts).length) { status.textContent = 'Add some text first.'; return; }
+    const base = location.href.split('?')[0].split('#')[0];
+    const link = base + '?d=' + encodeData({ title: title.value.trim(), texts });
+    linkBox.value = link; openLink.href = link; out.hidden = false;
+    status.textContent = '';
+  });
+
+  app.append(el('div', {}, tbtn, cbtn), status, out);
+}
+
+/* ---------- start ---------- */
+(function init() {
+  const p = new URLSearchParams(location.search);
+  const d = p.get('d');
+  let data = null;
+  if (d) { try { data = decodeData(d); } catch (e) { data = null; } }
+  if (data && !p.has('builder')) renderReader(data);
+  else renderBuilder(data);
+})();
+</script>
+</body>
+</html>
