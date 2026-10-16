@@ -3,70 +3,169 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FFF7EC">
 <title>Event Reader</title>
 <style>
-  :root { --ink:#1f2937; --muted:#6b7280; --accent:#2563eb; --accent-dark:#1d4ed8; --soft:#eff6ff; --line:#d1d5db; --warn:#92400e; --warnbg:#fef3c7; }
-  * { box-sizing: border-box; }
-  body { margin:0; padding:16px; color:var(--ink); background:#fff;
-         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans","Noto Sans SC","Noto Sans Tamil",sans-serif; }
-  h1 { font-size:1.6rem; margin:0 0 12px; }
-  .hint { color:var(--muted); font-size:.95rem; margin:0 0 16px; }
+  :root {
+    --bg:#FFF7EC; --card:#FFFFFF; --ink:#2A2430; --muted:#6B6475; --line:#E7DCCB;
+    --teal:#0F766E; --teal-soft:#E3F3F0; --teal-dark:#0B5B55;
+    --orange:#C2410C; --orange-dark:#8F2F08; --slate:#26303B;
+    --warn-bg:#FEF3C7; --warn:#6B3B05; --ok:#14663A; --radius:20px;
+    --msg-size:2rem;
+  }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; padding:16px; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Noto Sans SC","Noto Sans TC","Noto Sans Tamil",sans-serif;
+    line-height:1.4;
+  }
+  button { font-family:inherit; cursor:pointer; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible, a:focus-visible {
+    outline:4px solid #F59E0B; outline-offset:2px;
+  }
+  .wrap { max-width:780px; margin:0 auto; }
 
-  /* ---------- Reader (seniors) ---------- */
-  .tabs { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
-  .tab { font-size:1.4rem; padding:14px 22px; min-height:60px; border-radius:14px; border:3px solid var(--accent);
-         background:#fff; color:var(--accent); cursor:pointer; font-weight:600; }
-  .tab[aria-pressed="true"] { background:var(--accent); color:#fff; }
-  .msg { font-size:2rem; line-height:1.5; padding:20px; background:var(--soft); border-radius:16px; margin-bottom:16px; white-space:pre-wrap; }
-  .listen { width:100%; font-size:2rem; font-weight:700; padding:20px; min-height:84px; border:none; border-radius:18px;
-            background:var(--accent); color:#fff; cursor:pointer; }
-  .listen:active { background:var(--accent-dark); }
-  .listen.playing { background:#b91c1c; }
-  .note { margin-top:12px; padding:10px 14px; border-radius:10px; background:var(--warnbg); color:var(--warn); font-size:1rem; }
+  /* ================= READER (seniors) ================= */
+  .hero { display:flex; align-items:center; gap:16px; margin:4px 0 18px; }
+  .hero-icon {
+    flex:none; width:72px; height:72px; border-radius:50%; background:var(--teal-soft);
+    display:flex; align-items:center; justify-content:center; font-size:2.4rem;
+  }
+  .hero h1 { margin:0; font-size:clamp(1.7rem,5.5vw,2.6rem); line-height:1.15; }
+  .pick-label { margin:0 0 8px; font-size:1.05rem; color:var(--muted); font-weight:600; }
+  .lang-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:18px; }
+  .lang-btn {
+    min-height:76px; padding:10px 12px; border-radius:18px; border:3px solid var(--teal);
+    background:var(--card); color:var(--teal-dark); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px;
+  }
+  .lang-btn .main { font-size:1.45rem; font-weight:800; line-height:1.15; }
+  .lang-btn .sub { font-size:.9rem; font-weight:600; opacity:.85; }
+  .lang-btn[aria-pressed="true"] { background:var(--teal); color:#fff; box-shadow:0 4px 0 var(--teal-dark); }
+  .msg {
+    background:var(--card); border:2px solid var(--line); border-radius:var(--radius);
+    padding:22px 22px; margin-bottom:16px; font-size:var(--msg-size); line-height:1.55;
+    white-space:pre-wrap; overflow-wrap:anywhere; min-height:96px;
+  }
+  .msg.empty { color:var(--muted); font-size:1.4rem; display:flex; align-items:center; }
+  .listen {
+    width:100%; min-height:100px; border:none; border-radius:26px; background:var(--orange); color:#fff;
+    font-size:2.1rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:16px;
+    box-shadow:0 7px 0 var(--orange-dark); margin-bottom:22px; padding:12px 18px;
+    transition:transform .08s, box-shadow .08s;
+  }
+  .listen:active { transform:translateY(5px); box-shadow:0 2px 0 var(--orange-dark); }
+  .listen.playing { background:var(--slate); box-shadow:0 7px 0 #10161C; }
+  .listen svg { width:46px; height:46px; flex:none; }
+  .eq { display:none; align-items:flex-end; gap:5px; height:34px; }
+  .listen.playing .eq { display:flex; }
+  .eq i { width:7px; background:#fff; border-radius:4px; height:12px; animation:eq 0.9s ease-in-out infinite; }
+  .eq i:nth-child(2) { animation-delay:.15s; } .eq i:nth-child(3) { animation-delay:.3s; } .eq i:nth-child(4) { animation-delay:.45s; }
+  @keyframes eq { 0%,100% { height:10px; } 50% { height:32px; } }
+  .tools { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .tool {
+    min-height:58px; padding:0 20px; border-radius:16px; border:2px solid var(--line); background:var(--card);
+    color:var(--ink); font-size:1.15rem; font-weight:700; display:inline-flex; align-items:center; gap:8px;
+  }
+  .tool[aria-pressed="true"] { border-color:var(--teal); background:var(--teal-soft); color:var(--teal-dark); }
+  .tool-group { display:inline-flex; gap:8px; }
+  .note { margin-top:16px; padding:14px 16px; border-radius:14px; background:var(--warn-bg); color:var(--warn); font-size:1.15rem; font-weight:600; }
+  .note[hidden] { display:none; }
+  @media (prefers-reduced-motion:reduce) { .eq i { animation:none; height:20px; } .listen { transition:none; } }
 
-  /* ---------- Builder (staff) ---------- */
-  label { display:block; font-weight:600; margin:14px 0 4px; }
-  input[type=text], textarea { width:100%; padding:10px 12px; font-size:1rem; font-family:inherit; border:1px solid var(--line); border-radius:8px; }
-  textarea { min-height:84px; resize:vertical; }
-  .row { display:flex; gap:8px; align-items:flex-start; }
-  .row > textarea { flex:1; }
-  button.small { padding:8px 12px; font-size:.95rem; border-radius:8px; border:1px solid var(--line); background:#fff; cursor:pointer; white-space:nowrap; }
-  button.primary { padding:12px 18px; font-size:1rem; font-weight:600; border:none; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; margin-top:16px; margin-right:8px; }
-  button.primary:disabled { opacity:.6; cursor:wait; }
-  .status { font-size:.9rem; color:var(--muted); margin-top:8px; min-height:1.2em; }
-  .out { margin-top:20px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
-  .out input { margin-bottom:8px; }
+  /* ================= BUILDER (staff) ================= */
+  .builder h1 { font-size:1.9rem; margin:0 0 6px; }
+  .builder .lead { color:var(--muted); margin:0 0 20px; font-size:1.05rem; }
+  .step {
+    background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 18px 20px; margin-bottom:16px;
+  }
+  .step h2 { margin:0 0 12px; font-size:1.25rem; display:flex; align-items:center; gap:10px; }
+  .step h2 .n {
+    width:32px; height:32px; border-radius:50%; background:var(--teal); color:#fff; font-size:1rem;
+    display:inline-flex; align-items:center; justify-content:center; flex:none;
+  }
+  .builder label { display:block; font-weight:700; margin:12px 0 4px; }
+  .builder input[type=text], .builder textarea {
+    width:100%; padding:12px 14px; font-size:1.05rem; font-family:inherit; border:2px solid var(--line);
+    border-radius:12px; background:#fff; color:var(--ink);
+  }
+  .builder textarea { min-height:92px; resize:vertical; }
+  .help { color:var(--muted); font-size:.95rem; margin:4px 0 0; }
+  .btn {
+    padding:12px 18px; font-size:1rem; font-weight:700; border-radius:12px; border:2px solid var(--teal);
+    background:#fff; color:var(--teal-dark);
+  }
+  .btn.primary { background:var(--teal); color:#fff; }
+  .btn.warm { background:var(--orange); border-color:var(--orange); color:#fff; }
+  .btn:disabled { opacity:.55; cursor:wait; }
+  .btn.small { padding:8px 12px; font-size:.92rem; border-radius:10px; }
+  .btn-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; align-items:center; }
+  .emoji-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .emoji-row button { font-size:1.5rem; width:46px; height:46px; border-radius:12px; border:2px solid var(--line); background:#fff; }
+  .emoji-row button[aria-pressed="true"] { border-color:var(--teal); background:var(--teal-soft); }
+  .status { min-height:1.3em; margin-top:10px; font-size:.97rem; color:var(--muted); }
+  .status.err { color:#9F1239; font-weight:600; }
+  .lcard { border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:12px; background:#FFFCF7; }
+  .lhead { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; justify-content:space-between; }
+  .lhead .name { font-weight:800; font-size:1.1rem; }
+  .lhead .name small { font-weight:600; color:var(--muted); margin-left:6px; }
+  .badge { font-size:.85rem; font-weight:700; padding:3px 10px; border-radius:999px; background:#EFE9DD; color:var(--muted); }
+  .badge.ok { background:#DDF3E4; color:var(--ok); }
+  .badge.no { background:#FDE7E7; color:#8E1B1B; }
+  details { margin-top:10px; border-top:1px dashed var(--line); padding-top:8px; }
+  summary { font-weight:700; cursor:pointer; padding:6px 0; }
+  .rec-box { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+  .rec-box audio { width:100%; }
+  .out { margin-top:14px; padding:14px; border:2px dashed var(--teal); border-radius:14px; background:var(--teal-soft); }
+  .out input { margin:8px 0; }
+  .preview { margin-top:18px; padding:16px; border:2px solid var(--line); border-radius:18px; background:var(--bg); }
+  .preview > .tag { display:inline-block; font-size:.85rem; font-weight:800; color:var(--muted); margin-bottom:10px; letter-spacing:.04em; text-transform:uppercase; }
+  .checklist { margin:8px 0 0; padding-left:20px; }
+  .checklist li { margin:4px 0; }
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div class="wrap" id="app"></div>
 
 <script>
-/* ============================================================
-   CONFIG - add or remove languages here.
-   code : short key used inside the link
-   label: what appears on the button (write it in that language)
-   bcp  : voice language tag used for text-to-speech
-   mm   : language code used by the free MyMemory translation API
-   ============================================================ */
+/* =====================================================================
+   SETTINGS - add, remove or rename languages here
+   code    : short key stored inside the link
+   label   : big text on the button (in that language)
+   sub     : small English name under the label
+   voices  : language tags tried, in order, for the device's built-in voice
+   base    : true = also accept any voice of the same base language (e.g. any English)
+   mm      : language code for the free MyMemory translator (null = cannot translate)
+   listen  : text on the big button when this language is selected
+   ===================================================================== */
 const LANGS = [
-  { code: 'en', label: 'English',       bcp: 'en-SG', mm: 'en'    },
-  { code: 'zh', label: '中文',           bcp: 'zh-CN', mm: 'zh-CN' },
-  { code: 'ms', label: 'Bahasa Melayu', bcp: 'ms-MY', mm: 'ms'    },
-  { code: 'ta', label: 'தமிழ்',          bcp: 'ta-IN', mm: 'ta'    }
+  { code:'en',  label:'English',        sub:'English',  voices:['en-SG','en-GB','en-US','en-AU'], base:true,  mm:'en',    listen:'Listen' },
+  { code:'zh',  label:'华语',            sub:'Mandarin', voices:['zh-CN','zh-SG','zh-TW'],         base:false, mm:'zh-CN', listen:'点击收听' },
+  { code:'ms',  label:'Bahasa Melayu',  sub:'Malay',    voices:['ms-MY'],                         base:true,  mm:'ms',    listen:'Dengar' },
+  { code:'ta',  label:'தமிழ்',           sub:'Tamil',    voices:['ta-IN','ta-SG','ta-LK'],         base:true,  mm:'ta',    listen:'கேளுங்கள்' },
+  { code:'yue', label:'广东话',          sub:'Cantonese',voices:['zh-HK','yue-HK','yue-CN'],       base:false, mm:'zh-TW', listen:'聽一聽' },
+  { code:'nan', label:'福建话',          sub:'Hokkien',  voices:[],                                base:false, mm:null,    listen:'听一听' },
+  { code:'tws', label:'潮州话',          sub:'Teochew',  voices:[],                                base:false, mm:null,    listen:'听一听' },
+  { code:'hak', label:'客家话',          sub:'Hakka',    voices:[],                                base:false, mm:null,    listen:'听一听' }
 ];
-const SPEECH_RATE = 0.85;   // slightly slower than normal, easier for seniors
+const RATE_NORMAL = 0.88, RATE_SLOW = 0.62;         // computer-voice speed
+const AUDIO_NORMAL = 1,   AUDIO_SLOW = 0.75;        // recording speed
+const SIZES = [1.6, 2.0, 2.5, 3.1];                 // message text sizes (rem)
+const ICONS = ['🎲','🎤','🧘','💃','🎉','🍳','☕','🩺','💇','🎬','📰','🎂','🏃','🎨','🎵','📣'];
 
-/* ---------- helpers ---------- */
-const $ = (id) => document.getElementById(id);
+/* ---------------------------- helpers ---------------------------- */
 function el(tag, props, ...kids) {
   const e = document.createElement(tag);
   Object.entries(props || {}).forEach(([k, v]) => {
+    if (v === false || v == null) return;
     if (k === 'class') e.className = v;
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
-    else e.setAttribute(k, v);
+    else e.setAttribute(k, v === true ? '' : v);
   });
-  kids.forEach(k => e.append(k));
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k); });
   return e;
 }
 function encodeData(obj) {
@@ -78,183 +177,401 @@ function decodeData(s) {
   s = s.replace(/-/g, '+').replace(/_/g, '/');
   while (s.length % 4) s += '=';
   const bin = atob(s);
-  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-  return JSON.parse(new TextDecoder().decode(bytes));
+  return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
 }
+function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) {} return null; }
+function resolveAudioUrl(name) {
+  name = (name || '').trim();
+  if (!name) return '';
+  if (/^(https?:|blob:|data:)/i.test(name)) return name;
+  try { return new URL(name, location.href).href; } catch (e) { return name; }
+}
+function slug(s) { return (s || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'event'; }
 
-/* ---------- text-to-speech (built into the browser, free, no key) ---------- */
+/* ---------------------- computer voices (TTS) --------------------- */
 const hasTTS = 'speechSynthesis' in window;
-let voices = [];
-function loadVoices() { voices = hasTTS ? speechSynthesis.getVoices() : []; }
-if (hasTTS) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
-
-function findVoice(bcp) {
-  const want = bcp.toLowerCase();
-  const norm = v => v.lang.replace('_', '-').toLowerCase();
-  return voices.find(v => norm(v) === want)
-      || voices.find(v => norm(v).split('-')[0] === want.split('-')[0]);
+const voiceListeners = [];
+if (hasTTS) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => voiceListeners.forEach(f => f());
 }
-function speak(text, bcp, onEnd) {
-  if (!hasTTS) return false;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  const v = findVoice(bcp);
-  if (!v) { if (onEnd) onEnd(); return false; }   // no voice installed for this language
-  u.voice = v; u.lang = v.lang; u.rate = SPEECH_RATE;
-  u.onend = u.onerror = () => { if (onEnd) onEnd(); };
-  speechSynthesis.speak(u);
-  return true;
-}
-function stopSpeaking() { if (hasTTS) speechSynthesis.cancel(); }
-
-/* ---------- translation (free MyMemory API, used by staff only) ---------- */
-function chunkText(text, max = 400) {            // API limit is about 500 bytes per request
-  const parts = text.match(/[^.!?。！？\n]+[.!?。！？]*\s*/g) || [text];
-  const chunks = []; let cur = '';
-  parts.forEach(p => {
-    if ((cur + p).length > max && cur) { chunks.push(cur); cur = p; } else cur += p;
-  });
-  if (cur.trim()) chunks.push(cur);
-  return chunks;
-}
-async function translate(text, target) {
-  const out = [];
-  for (const chunk of chunkText(text)) {
-    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=en|' + encodeURIComponent(target);
-    const res = await fetch(url);
-    const json = await res.json();
-    if (json.responseStatus !== 200) throw new Error(json.responseDetails || 'Translation failed');
-    out.push(json.responseData.translatedText);
+const normLang = l => (l || '').replace('_', '-').toLowerCase();
+function voiceScore(v) { const n = (v.name || '').toLowerCase(); return (/premium|enhanced|natural/.test(n) ? 2 : 0) + (v.localService ? 1 : 0); }
+function pickVoice(def) {
+  if (!hasTTS || !def.voices.length) return null;
+  const vs = speechSynthesis.getVoices();
+  if (!vs.length) return null;
+  const best = list => list.sort((a, b) => voiceScore(b) - voiceScore(a))[0];
+  for (const c of def.voices) {
+    const m = vs.filter(v => normLang(v.lang) === normLang(c));
+    if (m.length) return best(m);
   }
-  return out.join(' ').trim();
+  if (def.base) {
+    const base = normLang(def.voices[0]).split('-')[0];
+    const m = vs.filter(v => normLang(v.lang).split('-')[0] === base);
+    if (m.length) return best(m);
+  }
+  return null;
+}
+function splitSentences(text, max = 140) {
+  const parts = text.replace(/\s*\n+\s*/g, '. ').replace(/\.\s*\./g, '.').match(/[^.!?。！？;；]+[.!?。！？;；]*/g) || [text];
+  const out = []; let cur = '';
+  parts.forEach(p => { if ((cur + p).length > max && cur) { out.push(cur.trim()); cur = p; } else cur += p; });
+  if (cur.trim()) out.push(cur.trim());
+  return out;
 }
 
-/* ============================================================
-   READER VIEW  (what seniors see inside Notion)
-   ============================================================ */
-function renderReader(data) {
-  const app = $('app'); app.innerHTML = '';
-  const avail = LANGS.filter(l => data.texts && (data.texts[l.code] || '').trim());
-  if (!avail.length) { app.append(el('p', {}, 'No text for this event.')); return; }
+/* One player per page: plays a recording if there is one, otherwise the device voice */
+function createPlayer(onState, onFail) {
+  let audio = null, token = 0;
+  const keep = [];
+  function stop() {
+    token++;
+    if (audio) { audio.onended = audio.onerror = null; audio.pause(); audio = null; }
+    if (hasTTS) speechSynthesis.cancel();
+    onState(false);
+  }
+  async function play(opts) {                // {text, def, audioUrl, slow}
+    const wasSpeaking = hasTTS && (speechSynthesis.speaking || speechSynthesis.pending);
+    stop();
+    const my = token;
+    if (opts.audioUrl) {
+      audio = new Audio(opts.audioUrl);
+      audio.playbackRate = opts.slow ? AUDIO_SLOW : AUDIO_NORMAL;
+      audio.onended = () => { if (my === token) onState(false); };
+      audio.onerror = () => { if (my === token) { onState(false); onFail('audio'); } };
+      onState(true);
+      try { await audio.play(); } catch (e) { if (my === token) { onState(false); onFail('audio'); } }
+      return;
+    }
+    const voice = pickVoice(opts.def);
+    if (!voice || !(opts.text || '').trim()) { onFail('novoice'); return; }
+    const parts = splitSentences(opts.text);
+    let i = 0;
+    onState(true);
+    const next = () => {
+      if (my !== token) return;
+      if (i >= parts.length) { onState(false); return; }
+      const u = new SpeechSynthesisUtterance(parts[i++]);
+      u.voice = voice; u.lang = voice.lang; u.rate = opts.slow ? RATE_SLOW : RATE_NORMAL;
+      u.onend = next;
+      u.onerror = e => {
+        if (my !== token || e.error === 'canceled' || e.error === 'interrupted') return;
+        onState(false); onFail('tts');
+      };
+      keep.push(u); if (keep.length > 12) keep.shift();
+      speechSynthesis.speak(u);
+    };
+    if (wasSpeaking) setTimeout(next, 90); else next();
+  }
+  return { play, stop };
+}
+
+/* ======================================================================
+   READER VIEW - what seniors see
+   data = { title, icon, texts:{code:text}, audio:{code:filename} }
+   ====================================================================== */
+const SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+
+function renderReader(root, data, opts) {
+  opts = opts || {};
+  root.innerHTML = '';
+  const texts = data.texts || {}, audio = data.audio || {};
+  const avail = LANGS.filter(l => (texts[l.code] || '').trim() || (audio[l.code] || '').trim());
+  if (!avail.length) { root.append(el('p', { class: 'note' }, 'There is nothing to show for this event yet.')); return { destroy() {} }; }
 
   let current = avail[0];
-  if (data.title) app.append(el('h1', {}, data.title));
+  let slow = store('er-slow') === '1';
+  let sizeIdx = parseInt(store('er-size'), 10);
+  if (!(sizeIdx >= 0 && sizeIdx < SIZES.length)) sizeIdx = 1;
+  const audioFor = code => {
+    const name = (audio[code] || '').trim();
+    if (!name) return '';
+    return opts.resolveAudio ? opts.resolveAudio(code, name) : resolveAudioUrl(name);
+  };
 
-  const tabs = el('div', { class: 'tabs', role: 'group' });
-  const msg  = el('div', { class: 'msg' });
-  const btn  = el('button', { class: 'listen', type: 'button' });
-  const note = el('div', { class: 'note', hidden: '' });
-
-  function resetBtn() { btn.classList.remove('playing'); btn.textContent = '🔊  Listen'; }
-  function showLang(l) {
-    stopSpeaking(); resetBtn(); note.hidden = true;
-    current = l;
-    msg.textContent = data.texts[l.code];
-    msg.lang = l.bcp;
-    [...tabs.children].forEach(t => t.setAttribute('aria-pressed', t.dataset.code === l.code));
+  const box = el('div', { class: 'reader' });
+  if (data.title || data.icon) {
+    box.append(el('div', { class: 'hero' },
+      data.icon ? el('div', { class: 'hero-icon', 'aria-hidden': 'true' }, data.icon) : null,
+      data.title ? el('h1', {}, data.title) : null));
   }
-  avail.forEach(l => {
-    const t = el('button', { class: 'tab', type: 'button', 'data-code': l.code, onclick: () => showLang(l) }, l.label);
-    tabs.append(t);
-  });
-  btn.addEventListener('click', () => {
-    if (btn.classList.contains('playing')) { stopSpeaking(); resetBtn(); return; }
-    loadVoices();
-    btn.classList.add('playing'); btn.textContent = '⏹  Stop';
-    const ok = speak(data.texts[current.code], current.bcp, resetBtn);
-    if (!ok) {
-      resetBtn();
-      note.textContent = 'This device has no voice installed for this language. Please ask the staff for help.';
-      note.hidden = false;
-    }
+
+  const grid = el('div', { class: 'lang-grid', role: 'group', 'aria-label': 'Choose your language' });
+  const msg = el('div', { class: 'msg' });
+  const labelText = el('span', {});
+  const eq = el('span', { class: 'eq', 'aria-hidden': 'true' }, el('i'), el('i'), el('i'), el('i'));
+  const iconSpan = el('span', { 'aria-hidden': 'true', style: 'display:inline-flex' });
+  iconSpan.innerHTML = SPEAKER;
+  const listenBtn = el('button', { class: 'listen', type: 'button' }, iconSpan, labelText, eq);
+  const note = el('div', { class: 'note', role: 'status', 'aria-live': 'polite', hidden: true });
+  let isPlaying = false;
+
+  function paintButton() {
+    listenBtn.classList.toggle('playing', isPlaying);
+    labelText.textContent = isPlaying ? 'Stop  停止' : current.listen;
+    listenBtn.setAttribute('aria-label', isPlaying ? 'Stop' : 'Listen in ' + current.sub);
+  }
+  const player = createPlayer(p => { isPlaying = p; paintButton(); }, reason => {
+    note.hidden = false;
+    note.textContent = reason === 'novoice'
+      ? 'Sorry, this device cannot read this language aloud. Please ask our staff to help.  抱歉，此设备无法朗读这种语言，请向工作人员求助。'
+      : 'Sorry, the sound could not play. Please ask our staff to help.  抱歉，声音无法播放，请向工作人员求助。';
   });
 
-  app.append(tabs, msg, btn, note);
-  showLang(current);
+  function show(l) {
+    player.stop(); note.hidden = true; current = l;
+    const t = (texts[l.code] || '').trim();
+    msg.textContent = t || ('🔊 ' + l.label);
+    msg.classList.toggle('empty', !t);
+    msg.setAttribute('lang', { en:'en', zh:'zh-CN', ms:'ms', ta:'ta', yue:'yue-HK', nan:'zh-CN', tws:'zh-CN', hak:'zh-CN' }[l.code] || 'en');
+    [...grid.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.code === l.code)));
+    paintButton();
+  }
+  avail.forEach(l => grid.append(el('button', { class: 'lang-btn', type: 'button', 'data-code': l.code, 'aria-pressed': 'false', onclick: () => show(l) },
+    el('span', { class: 'main' }, l.label), el('span', { class: 'sub' }, l.sub))));
+
+  listenBtn.addEventListener('click', () => {
+    if (isPlaying) { player.stop(); return; }
+    note.hidden = true;
+    player.play({ text: texts[current.code] || '', def: current, audioUrl: audioFor(current.code), slow });
+  });
+
+  const slowBtn = el('button', { class: 'tool', type: 'button', 'aria-pressed': String(slow), onclick: () => {
+    slow = !slow; store('er-slow', slow ? '1' : '0');
+    slowBtn.setAttribute('aria-pressed', String(slow));
+  } }, '🐢 Slower  慢一点');
+  function setSize(i) {
+    sizeIdx = Math.max(0, Math.min(SIZES.length - 1, i)); store('er-size', String(sizeIdx));
+    box.style.setProperty('--msg-size', SIZES[sizeIdx] + 'rem');
+  }
+  const smaller = el('button', { class: 'tool', type: 'button', 'aria-label': 'Smaller text', onclick: () => setSize(sizeIdx - 1) }, 'A−');
+  const bigger  = el('button', { class: 'tool', type: 'button', 'aria-label': 'Bigger text',  onclick: () => setSize(sizeIdx + 1) }, 'A+');
+  setSize(sizeIdx);
+
+  if (avail.length > 1) box.append(el('p', { class: 'pick-label' }, 'Choose your language · 选择语言 · Pilih bahasa · மொழியைத் தேர்ந்தெடுங்கள்'), grid);
+  else box.append(grid);
+  if (avail.length === 1) grid.style.display = 'none';
+  box.append(msg, listenBtn, el('div', { class: 'tools' }, slowBtn, el('span', { class: 'tool-group' }, smaller, bigger)), note);
+  root.append(box);
+  show(current);
+  return { destroy() { player.stop(); } };
 }
 
-/* ============================================================
-   BUILDER VIEW  (for staff - open the page with no ?d= in the link)
-   ============================================================ */
-function renderBuilder(prefill) {
-  const app = $('app'); app.innerHTML = '';
-  prefill = prefill || { title: '', texts: {} };
+/* ======================================================================
+   BUILDER VIEW - for staff (open the page with nothing after the address)
+   ====================================================================== */
+function renderBuilder(root, prefill) {
+  root.innerHTML = '';
+  prefill = prefill || {};
+  const ptexts = prefill.texts || {}, paudio = prefill.audio || {};
+  const localAudio = {};               // code -> blob URL of a fresh recording (for preview only)
+  let icon = prefill.icon || '';
+  let previewHandle = null;
 
-  app.append(
-    el('h1', {}, 'Event reader - link builder'),
-    el('p', { class: 'hint' }, 'For staff. Type the English message, auto-translate, check each language, then create the link and paste it into a Notion /embed block.')
-  );
+  const b = el('div', { class: 'builder' });
+  b.append(el('h1', {}, 'Event reader – link builder'),
+    el('p', { class: 'lead' }, 'For staff. Write the message once, add the languages you want, then make a link to paste into the event page in Notion (/embed).'));
 
-  app.append(el('label', { for: 'title' }, 'Event name (optional, shown as heading)'));
-  const title = el('input', { type: 'text', id: 'title', placeholder: 'e.g. Rummikub Session' });
-  title.value = prefill.title || '';
-  app.append(title);
+  /* ---- Step 1 ---- */
+  const titleIn = el('input', { type: 'text', id: 'title', placeholder: 'e.g. Rummikub', value: prefill.title || '' });
+  const emojiRow = el('div', { class: 'emoji-row' });
+  function paintEmoji() { [...emojiRow.children].forEach(x => x.setAttribute('aria-pressed', String(x.textContent === icon))); }
+  ICONS.forEach(e => emojiRow.append(el('button', { type: 'button', 'aria-pressed': 'false', onclick: () => { icon = icon === e ? '' : e; paintEmoji(); } }, e)));
+  paintEmoji();
+  b.append(el('section', { class: 'step' },
+    el('h2', {}, el('span', { class: 'n' }, '1'), 'Name the event'),
+    el('label', { for: 'title' }, 'Event name (shown as the heading)'), titleIn,
+    el('label', {}, 'Picture (optional)'), emojiRow));
 
-  const fields = {};
-  LANGS.forEach(l => {
-    app.append(el('label', { for: 'txt-' + l.code }, l.label + (l.code === 'en' ? ' (type this one)' : '')));
-    const ta = el('textarea', { id: 'txt-' + l.code, lang: l.bcp });
-    ta.value = (prefill.texts && prefill.texts[l.code]) || '';
-    fields[l.code] = ta;
-    const test = el('button', { class: 'small', type: 'button', onclick: () => {
-      if (!ta.value.trim()) return;
-      loadVoices();
-      if (!speak(ta.value, l.bcp)) status.textContent = 'No voice for ' + l.label + ' on this device.';
-    } }, '🔊 Test');
-    app.append(el('div', { class: 'row' }, ta, test));
-  });
+  /* ---- Step 2 + 3 : languages ---- */
+  const fields = {}, audioIn = {}, badges = {};
+  const status = el('div', { class: 'status', role: 'status' });
+  function setStatus(msg, err) { status.textContent = msg; status.classList.toggle('err', !!err); }
 
-  const status = el('div', { class: 'status' });
-  const tbtn = el('button', { class: 'primary', type: 'button' }, 'Auto-translate from English');
-  tbtn.addEventListener('click', async () => {
+  async function translateOne(text, target) {
+    const out = [];
+    for (const chunk of splitSentences(text, 400)) {
+      const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunk) + '&langpair=en|' + encodeURIComponent(target);
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.responseStatus !== 200) throw new Error(json.responseDetails || 'Translation failed');
+      out.push(json.responseData.translatedText);
+    }
+    return out.join(' ').trim();
+  }
+  async function translateInto(codes, overwrite) {
     const en = fields.en.value.trim();
-    if (!en) { status.textContent = 'Type the English text first.'; return; }
-    tbtn.disabled = true;
+    if (!en) { setStatus('Type the English message first.', true); return; }
+    transBtn.disabled = true;
     try {
-      for (const l of LANGS.filter(x => x.code !== 'en')) {
-        status.textContent = 'Translating to ' + l.label + '...';
-        fields[l.code].value = await translate(en, l.mm);
+      for (const code of codes) {
+        const def = LANGS.find(l => l.code === code);
+        if (!def.mm || code === 'en') continue;
+        if (!overwrite && fields[code].value.trim()) continue;
+        setStatus('Translating to ' + def.sub + '…');
+        fields[code].value = await translateOne(en, def.mm);
       }
-      status.textContent = 'Done. Machine translation can be wrong - please have someone who speaks each language check it.';
+      setStatus('Done. Machine translation can be wrong – please ask someone who speaks each language to check it, and press Test to hear it.');
     } catch (e) {
-      status.textContent = 'Translation failed (' + e.message + '). You can type the translations in by hand.';
+      setStatus('Translation did not work (' + e.message + '). You can type the translation yourself.', true);
     }
-    tbtn.disabled = false;
+    transBtn.disabled = false;
+  }
+
+  const transBtn = el('button', { class: 'btn primary', type: 'button', onclick: () => translateInto(LANGS.map(l => l.code), false) }, 'Translate into the empty languages');
+  const cards = el('div', {});
+
+  const testPlayer = createPlayer(() => {}, r => setStatus(r === 'novoice' ? 'This device has no computer voice for that language. Use a recording instead.' : 'The recording could not be played.', true));
+
+  LANGS.forEach(def => {
+    const code = def.code;
+    const isEn = code === 'en';
+    const voiceOnly = !def.voices.length;
+    const ta = el('textarea', { id: 'txt-' + code, lang: code === 'en' ? 'en' : 'zh' }); ta.value = ptexts[code] || '';
+    fields[code] = ta;
+    const fileIn = el('input', { type: 'text', placeholder: 'e.g. ' + slug(prefill.title || 'rummikub') + '-' + code + '.m4a', value: paudio[code] || '' });
+    audioIn[code] = fileIn;
+    const badge = el('span', { class: 'badge' }, '…'); badges[code] = badge;
+
+    const testBtn = el('button', { class: 'btn small', type: 'button', onclick: () => {
+      const url = localAudio[code] || resolveAudioUrl(fileIn.value);
+      testPlayer.play({ text: ta.value, def, audioUrl: url, slow: false });
+    } }, '🔊 Test');
+    const stopBtn = el('button', { class: 'btn small', type: 'button', onclick: () => testPlayer.stop() }, '⏹');
+
+    /* recording */
+    const recBtn = el('button', { class: 'btn small', type: 'button' }, '🎙 Record');
+    const preview = el('audio', { controls: true, hidden: true });
+    const saveLink = el('a', { class: 'btn small', hidden: true, style: 'text-decoration:none;display:inline-block' }, '⬇ Save recording');
+    const recMsg = el('p', { class: 'help' }, '');
+    let rec = null, stream = null, chunks = [];
+    recBtn.addEventListener('click', async () => {
+      if (rec && rec.state === 'recording') { rec.stop(); return; }
+      if (!navigator.mediaDevices || !window.MediaRecorder) { recMsg.textContent = 'This browser cannot record. Record with your phone and upload the file instead.'; return; }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+        rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+        chunks = [];
+        rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          const type = rec.mimeType || mime || 'audio/webm';
+          const blob = new Blob(chunks, { type });
+          const ext = /mp4/.test(type) ? 'm4a' : /ogg/.test(type) ? 'ogg' : 'webm';
+          if (localAudio[code]) URL.revokeObjectURL(localAudio[code]);
+          localAudio[code] = URL.createObjectURL(blob);
+          const fname = slug(titleIn.value) + '-' + code + '.' + ext;
+          fileIn.value = fname;
+          preview.src = localAudio[code]; preview.hidden = false;
+          saveLink.href = localAudio[code]; saveLink.setAttribute('download', fname); saveLink.hidden = false;
+          recBtn.textContent = '🎙 Record again';
+          recMsg.textContent = 'Saved as “' + fname + '”. Press “Save recording”, then upload that file to GitHub next to index.html (steps are at the bottom of this page).' + (ext === 'webm' ? ' Tip: record on an iPad or iPhone in Safari for a file that plays on every iPad.' : '');
+        };
+        rec.start();
+        recBtn.textContent = '⏹ Stop recording';
+        recMsg.textContent = 'Recording… speak clearly, then press Stop.';
+      } catch (e) {
+        recMsg.textContent = 'Could not use the microphone. Please allow microphone access for this page.';
+      }
+    });
+
+    const det = el('details', { open: voiceOnly || !!paudio[code] },
+      el('summary', {}, voiceOnly ? 'Voice recording (needed for this dialect)' : 'Voice recording (optional – replaces the computer voice)'),
+      el('div', { class: 'rec-box' },
+        el('div', { class: 'btn-row', style: 'margin-top:0' }, recBtn, saveLink),
+        preview,
+        el('label', { style: 'margin:4px 0 0' }, 'Recording file name (as uploaded to GitHub)'), fileIn,
+        recMsg));
+
+    cards.append(el('div', { class: 'lcard' },
+      el('div', { class: 'lhead' },
+        el('span', { class: 'name' }, def.label, el('small', {}, def.sub)),
+        el('span', { class: 'btn-row', style: 'margin:0' }, badge,
+          (def.mm && !isEn) ? el('button', { class: 'btn small', type: 'button', onclick: () => translateInto([code], true) }, '↻ Translate') : null,
+          testBtn, stopBtn)),
+      el('label', { for: 'txt-' + code }, isEn ? 'English message (type this one)' : (voiceOnly ? 'Words to show on screen (optional, Chinese characters)' : 'Message')),
+      ta,
+      voiceOnly ? el('p', { class: 'help' }, 'Phones and iPads have no built-in voice for ' + def.sub + ', so please add a recording below. The text is only shown on screen.') : null,
+      code === 'yue' ? el('p', { class: 'help' }, 'The Cantonese computer voice reads Chinese characters in Cantonese. It appears only if the device has one installed.') : null,
+      det));
   });
 
-  const out = el('div', { class: 'out', hidden: '' });
-  const linkBox = el('input', { type: 'text', readonly: '' });
-  const copyBtn = el('button', { class: 'small', type: 'button' }, 'Copy link');
-  const openLink = el('a', { href: '#', target: '_blank', rel: 'noopener' }, 'Open to preview');
+  function refreshBadges() {
+    LANGS.forEach(def => {
+      const badge = badges[def.code];
+      if (!def.voices.length) { badge.textContent = 'Recording only'; badge.className = 'badge'; return; }
+      const v = pickVoice(def);
+      badge.textContent = v ? '✔ Voice on this device' : 'No voice here';
+      badge.className = 'badge ' + (v ? 'ok' : 'no');
+    });
+  }
+  voiceListeners.push(refreshBadges); refreshBadges(); setTimeout(refreshBadges, 600);
+
+  b.append(el('section', { class: 'step' },
+    el('h2', {}, el('span', { class: 'n' }, '2'), 'Write the message and languages'),
+    el('p', { class: 'help', style: 'margin:0 0 10px' }, 'Keep it short and simple (about 30 words). Type English first, then translate. The “voice” badge shows whether THIS device can speak that language – check it on the iPad that will be used at the centre.'),
+    el('div', { class: 'btn-row', style: 'margin:0' }, transBtn),
+    status, cards));
+
+  /* ---- Step 3: make link ---- */
+  const linkBox = el('input', { type: 'text', readonly: true, 'aria-label': 'Link' });
+  const copyBtn = el('button', { class: 'btn small', type: 'button' }, 'Copy link');
+  const openLink = el('a', { href: '#', target: '_blank', rel: 'noopener', style: 'margin-left:6px' }, 'Open in a new tab');
+  const out = el('div', { class: 'out', hidden: true },
+    el('strong', {}, 'Paste this into a Notion “/embed” block:'), linkBox,
+    el('div', { class: 'btn-row', style: 'margin-top:0' }, copyBtn, openLink));
+  const previewHolder = el('div', { class: 'preview', hidden: true }, el('span', { class: 'tag' }, 'Preview – what seniors will see'));
+  const previewRoot = el('div', {}); previewHolder.append(previewRoot);
+
   copyBtn.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(linkBox.value); }
-    catch (e) { linkBox.select(); document.execCommand('copy'); }
-    copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy link', 1500);
+    try { await navigator.clipboard.writeText(linkBox.value); } catch (e) { linkBox.select(); document.execCommand('copy'); }
+    copyBtn.textContent = 'Copied ✔'; setTimeout(() => copyBtn.textContent = 'Copy link', 1600);
   });
-  out.append(el('strong', {}, 'Paste this into a Notion /embed block:'), linkBox, copyBtn, ' ', openLink);
-
-  const cbtn = el('button', { class: 'primary', type: 'button' }, 'Create link');
-  cbtn.addEventListener('click', () => {
-    const texts = {};
-    LANGS.forEach(l => { const v = fields[l.code].value.trim(); if (v) texts[l.code] = v; });
-    if (!Object.keys(texts).length) { status.textContent = 'Add some text first.'; return; }
+  const makeBtn = el('button', { class: 'btn warm', type: 'button', onclick: () => {
+    const data = { title: titleIn.value.trim(), icon, texts: {}, audio: {} };
+    LANGS.forEach(l => {
+      const t = fields[l.code].value.trim(); if (t) data.texts[l.code] = t;
+      const a = audioIn[l.code].value.trim(); if (a) data.audio[l.code] = a;
+    });
+    if (!Object.keys(data.texts).length && !Object.keys(data.audio).length) { setStatus('Add some text or a recording first.', true); return; }
+    if (!data.icon) delete data.icon;
+    if (!data.title) delete data.title;
+    if (!Object.keys(data.audio).length) delete data.audio;
     const base = location.href.split('?')[0].split('#')[0];
-    const link = base + '?d=' + encodeData({ title: title.value.trim(), texts });
-    linkBox.value = link; openLink.href = link; out.hidden = false;
-    status.textContent = '';
-  });
+    const link = base + '?d=' + encodeData(data);
+    linkBox.value = link; openLink.href = link; out.hidden = false; previewHolder.hidden = false;
+    setStatus('');
+    if (previewHandle) previewHandle.destroy();
+    previewHandle = renderReader(previewRoot, data, { resolveAudio: (code, name) => localAudio[code] || resolveAudioUrl(name) });
+    out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } }, 'Create link');
+  b.append(el('section', { class: 'step' },
+    el('h2', {}, el('span', { class: 'n' }, '3'), 'Create the link'),
+    el('div', { class: 'btn-row', style: 'margin-top:0' }, makeBtn), out, previewHolder));
 
-  app.append(el('div', {}, tbtn, cbtn), status, out);
+  /* ---- help ---- */
+  b.append(el('section', { class: 'step' },
+    el('h2', {}, el('span', { class: 'n' }, '?'), 'Adding a recording (for dialects)'),
+    el('ol', { class: 'checklist' },
+      el('li', {}, 'Press “Record” on that language, speak slowly and clearly, press Stop, then “Save recording”.'),
+      el('li', {}, 'On GitHub, open your repository, choose Add file → Upload files, and drop the recording in (next to index.html). Press Commit changes.'),
+      el('li', {}, 'Make sure the file name in the box matches exactly, then press “Create link”. Wait a minute after uploading before testing.'),
+      el('li', {}, 'To change a link later, open it and add &builder at the end of the address – the form will be filled in again.'))));
+
+  root.append(b);
 }
 
-/* ---------- start ---------- */
+/* ------------------------------ start ------------------------------ */
 (function init() {
+  const root = document.getElementById('app');
   const p = new URLSearchParams(location.search);
-  const d = p.get('d');
   let data = null;
+  const d = p.get('d');
   if (d) { try { data = decodeData(d); } catch (e) { data = null; } }
-  if (data && !p.has('builder')) renderReader(data);
-  else renderBuilder(data);
+  if (data && !p.has('builder')) renderReader(root, data);
+  else renderBuilder(root, data);
 })();
 </script>
 </body>
