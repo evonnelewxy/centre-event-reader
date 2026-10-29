@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FFF7EC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Activities">
+<title>Centre Activities</title>
+<style>
+  :root {
+    --bg:#FFF7EC; --card:#FFFFFF; --ink:#2A2430; --muted:#645D6E; --line:#E7DCCB;
+    --teal:#0F766E; --teal-dark:#0B5B55; --teal-soft:#E3F3F0;
+    --orange:#C2410C; --orange-dark:#8F2F08; --slate:#26303B;
+    --warn-bg:#FEF3C7; --warn:#6B3B05;
+    --desc:1.35rem;
+  }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink); line-height:1.4;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Noto Sans SC","Noto Sans TC","Noto Sans Tamil",sans-serif;
+  }
+  button { font-family:inherit; cursor:pointer; }
+  button:focus-visible { outline:4px solid #F59E0B; outline-offset:2px; }
+  .wrap { max-width:980px; margin:0 auto; padding:14px 16px 40px; }
+
+  /* header */
+  .top { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .top h1 { margin:0; font-size:clamp(1.25rem,3.4vw,1.7rem); line-height:1.2; }
+  .top .date { margin:2px 0 0; font-size:1.15rem; color:var(--muted); font-weight:600; }
+  .size { display:inline-flex; gap:8px; }
+  .controls { position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; border-bottom:2px solid var(--line); margin-bottom:6px; }
+  .langs, .views { display:flex; flex-wrap:wrap; gap:8px; }
+  .views { margin-top:10px; align-items:center; }
+  .lang {
+    min-height:58px; padding:6px 16px; border-radius:16px; border:3px solid var(--teal); background:var(--card); color:var(--teal-dark);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1;
+  }
+  .lang .main { font-size:1.3rem; font-weight:800; }
+  .lang .sub { font-size:.8rem; font-weight:600; opacity:.85; }
+  .lang[aria-pressed="true"] { background:var(--teal); color:#fff; box-shadow:0 4px 0 var(--teal-dark); }
+  .view {
+    min-height:58px; padding:0 22px; border-radius:16px; border:3px solid var(--slate); background:var(--card); color:var(--slate);
+    font-size:1.3rem; font-weight:800;
+  }
+  .view[aria-pressed="true"] { background:var(--slate); color:#fff; }
+  .tool { min-height:52px; padding:0 16px; border-radius:14px; border:2px solid var(--line); background:var(--card); font-size:1.1rem; font-weight:700; color:var(--ink); }
+  .tool[aria-pressed="true"] { border-color:var(--teal); background:var(--teal-soft); color:var(--teal-dark); }
+  .spacer { flex:1; }
+
+  /* list */
+  .day { margin:24px 0 10px; font-size:1.5rem; font-weight:800; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .day .istoday { font-size:1rem; padding:3px 12px; border-radius:999px; background:var(--orange); color:#fff; }
+  .card {
+    display:grid; grid-template-columns:190px 1fr; background:var(--card); border:2px solid var(--line);
+    border-left:10px solid var(--c,#8A8A8A); border-radius:20px; margin-bottom:14px; overflow:hidden;
+  }
+  .card.now { box-shadow:0 0 0 4px #F59E0B; }
+  .card.done { opacity:.62; }
+  .card.cancelled { opacity:.85; background:#FAF6F6; }
+  .cat-exercise { --c:#2F855A; --t:#E6F4EA; } .cat-games { --c:#C2185B; --t:#FCE8F1; } .cat-social { --c:#C2410C; --t:#FDEDE2; }
+  .cat-talk { --c:#1D4ED8; --t:#E6EDFC; } .cat-notice { --c:#6B7280; --t:#EEEEEE; }
+  .time { background:var(--t,#F1F1F1); padding:16px; display:flex; flex-direction:column; justify-content:center; gap:2px; }
+  .time .t1 { font-size:1.55rem; font-weight:800; line-height:1.15; }
+  .time .t2 { font-size:1.1rem; font-weight:600; color:var(--muted); }
+  .cancelled .time .t1, .cancelled .time .t2 { text-decoration:line-through; }
+  .body { padding:16px 18px 18px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .body h3 { margin:0; font-size:1.65rem; line-height:1.2; display:flex; gap:12px; align-items:flex-start; overflow-wrap:anywhere; }
+  .body h3 .ic { font-size:1.9rem; line-height:1; flex:none; }
+  .body h3 .sub { display:block; font-size:1.05rem; font-weight:600; color:var(--muted); margin-top:3px; }
+  .meta { display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; font-size:1.1rem; font-weight:600; }
+  .badge { padding:4px 12px; border-radius:999px; font-size:1rem; font-weight:800; }
+  .b-reg { background:#E6EDFC; color:#173FA6; } .b-walk { background:#DDF3E4; color:#14663A; }
+  .b-now { background:#F59E0B; color:#3A2200; } .b-done { background:#E5E1DA; color:#4B4650; }
+  .b-cancel { background:#FBE3E3; color:#8E1B1B; } .b-note { background:#EFE9DD; color:#4B4650; }
+  .desc { margin:0; font-size:var(--desc); line-height:1.55; overflow-wrap:anywhere; }
+  .listen {
+    align-self:flex-start; min-height:64px; padding:0 28px; border:none; border-radius:18px; background:var(--orange); color:#fff;
+    font-size:1.45rem; font-weight:800; display:inline-flex; align-items:center; gap:12px; box-shadow:0 5px 0 var(--orange-dark);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .listen:active { transform:translateY(4px); box-shadow:0 1px 0 var(--orange-dark); }
+  .listen.playing { background:var(--slate); box-shadow:0 5px 0 #10161C; }
+  .listen svg { width:30px; height:30px; flex:none; }
+  .eq { display:none; align-items:flex-end; gap:4px; height:24px; }
+  .listen.playing .eq { display:inline-flex; }
+  .eq i { width:6px; background:#fff; border-radius:3px; height:8px; animation:eq .9s ease-in-out infinite; }
+  .eq i:nth-child(2){animation-delay:.15s} .eq i:nth-child(3){animation-delay:.3s}
+  @keyframes eq { 0%,100%{height:8px} 50%{height:22px} }
+  .note { padding:12px 14px; border-radius:12px; background:var(--warn-bg); color:var(--warn); font-size:1.1rem; font-weight:600; }
+  .empty { background:var(--card); border:2px dashed var(--line); border-radius:20px; padding:30px 22px; text-align:center; font-size:1.5rem; font-weight:700; }
+  .empty .tool { margin-top:16px; font-size:1.3rem; min-height:60px; }
+  .setup { background:var(--card); border:2px solid var(--line); border-radius:20px; padding:22px; font-size:1.15rem; }
+  .setup code { background:#F4EEE2; padding:2px 6px; border-radius:6px; }
+  footer { margin-top:30px; padding-top:14px; border-top:2px solid var(--line); color:var(--muted); font-size:1.05rem; }
+  footer p { margin:4px 0; }
+  footer .meta-small { font-size:.9rem; margin-top:12px; }
+  @media (max-width:640px) {
+    .controls { position:static; }
+    .card { grid-template-columns:1fr; }
+    .time { flex-direction:row; align-items:baseline; gap:10px; flex-wrap:wrap; padding:12px 16px; }
+    .listen { width:100%; justify-content:center; }
+    .view { flex:1; padding:0 8px; font-size:1.1rem; }
+  }
+  @media (prefers-reduced-motion:reduce) { .eq i { animation:none; height:16px; } .listen { transition:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top" id="top"></div>
+  <div class="controls" id="controls"></div>
+  <main id="main" aria-live="polite"></main>
+  <footer id="foot"></footer>
+</div>
+
+<script src="config.js"></script>
+<script src="demo-data.js"></script>
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------ settings ------------------------------ */
+const CFG = Object.assign({ title: 'Activities', sheets: {}, defaultLocation: '', footer: [], refreshMinutes: 15, idleSeconds: 120 }, window.CENTRE_CONFIG || {});
+const Q = new URLSearchParams(location.search);
+const IDLE = Q.has('idle') ? Number(Q.get('idle')) : CFG.idleSeconds;
+const RATE_NORMAL = 0.88, RATE_SLOW = 0.62, AUDIO_NORMAL = 1, AUDIO_SLOW = 0.75;
+const DESC_SIZES = [1.15, 1.35, 1.7, 2.1];
+
+/* voices = language tags tried for the device's built-in voice; base = accept any voice of that language */
+const LANGS = [
+  { code:'en',  label:'English',        sub:'English',   voices:['en-SG','en-GB','en-US','en-AU'], base:true,  locale:'en-SG' },
+  { code:'zh',  label:'华语',            sub:'Mandarin',  voices:['zh-CN','zh-SG','zh-TW'],         base:false, locale:'zh-CN' },
+  { code:'ms',  label:'Bahasa Melayu',  sub:'Malay',     voices:['ms-MY'],                         base:true,  locale:'ms-MY' },
+  { code:'ta',  label:'தமிழ்',           sub:'Tamil',     voices:['ta-IN','ta-SG','ta-LK'],         base:true,  locale:'ta-SG' },
+  { code:'yue', label:'广东话',          sub:'Cantonese', voices:['zh-HK','yue-HK','yue-CN'],       base:false, locale:'zh-HK' },
+  { code:'nan', label:'福建话',          sub:'Hokkien',   voices:[],                                base:false, locale:'zh-CN' },
+  { code:'tws', label:'潮州话',          sub:'Teochew',   voices:[],                                base:false, locale:'zh-CN' },
+  { code:'hak', label:'客家话',          sub:'Hakka',     voices:[],                                base:false, locale:'zh-CN' }
+];
+const LANG = Object.fromEntries(LANGS.map(l => [l.code, l]));
+const ZH_SCRIPT = ['zh', 'yue', 'nan', 'tws', 'hak'];
+
+const UI = {
+  en:  { today:'Today', week:'This week', next:'Next week', listen:'Listen', stop:'Stop', now:'Happening now', done:'Finished', cancelled:'Cancelled', reg:'Registration required', walk:'Walk-in welcome', none:'No activities today', none2:'Nothing planned yet', see:'See this week', slower:'Slower', updated:'Updated', loading:'Loading…', fail:'Sorry, the sound could not play. Please ask our staff for help.', novoice:'Sorry, this device cannot read this language aloud. Please ask our staff for help.' },
+  zh:  { today:'今天', week:'本周', next:'下周', listen:'点击收听', stop:'停止', now:'正在进行', done:'已结束', cancelled:'已取消', reg:'仅限报名参加', walk:'无需报名', none:'今天没有活动', none2:'暂时没有安排', see:'查看本周活动', slower:'慢一点', updated:'更新于', loading:'载入中…', fail:'抱歉，声音无法播放，请向工作人员求助。', novoice:'抱歉，此设备无法朗读这种语言，请向工作人员求助。' },
+  ms:  { today:'Hari ini', week:'Minggu ini', next:'Minggu depan', listen:'Dengar', stop:'Berhenti', now:'Sedang berlangsung', done:'Tamat', cancelled:'Dibatalkan', reg:'Pendaftaran diperlukan', walk:'Walk-in dialu-alukan', none:'Tiada aktiviti hari ini', none2:'Belum ada aktiviti', see:'Lihat minggu ini', slower:'Lebih perlahan', updated:'Dikemas kini', loading:'Memuatkan…', fail:'Maaf, bunyi tidak dapat dimainkan. Sila minta bantuan kakitangan.', novoice:'Maaf, peranti ini tidak dapat membaca bahasa ini. Sila minta bantuan kakitangan.' },
+  ta:  { today:'இன்று', week:'இந்த வாரம்', next:'அடுத்த வாரம்', listen:'கேளுங்கள்', stop:'நிறுத்து', now:'இப்போது நடக்கிறது', done:'முடிந்தது', cancelled:'ரத்து', reg:'பதிவு அவசியம்', walk:'நேரடியாக வரலாம்', none:'இன்று நிகழ்ச்சிகள் இல்லை', none2:'இன்னும் திட்டமிடப்படவில்லை', see:'இந்த வாரத்தைப் பாருங்கள்', slower:'மெதுவாக', updated:'புதுப்பிப்பு', loading:'ஏற்றுகிறது…', fail:'மன்னிக்கவும், ஒலி இயங்கவில்லை. ஊழியர்களின் உதவியைக் கேளுங்கள்.', novoice:'மன்னிக்கவும், இந்தச் சாதனம் இந்த மொழியைப் படிக்க முடியாது. ஊழியர்களின் உதவியைக் கேளுங்கள்.' },
+  yue: { today:'今日', week:'今個星期', next:'下個星期', listen:'聽一聽', stop:'停止', now:'進行緊', done:'已完結', cancelled:'已取消', reg:'需要報名', walk:'無需報名', none:'今日冇活動', none2:'暫時未有安排', see:'睇今個星期', slower:'慢啲', updated:'更新於', loading:'載入緊…', fail:'抱歉，聲音播放唔到，請同職員求助。', novoice:'抱歉，部機唔能夠讀呢種語言，請同職員求助。' }
+};
+UI.nan = UI.tws = UI.hak = UI.zh;
+
+/* ------------------------------ helpers ------------------------------ */
+function el(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  Object.entries(props || {}).forEach(([k, v]) => {
+    if (v === false || v == null) return;
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  });
+  kids.flat().forEach(k => { if (k != null && k !== false) e.append(k); });
+  return e;
+}
+function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) {} return null; }
+const pad = n => String(n).padStart(2, '0');
+const toISO = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const fromISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+const addDays = (iso, n) => { const d = fromISO(iso); d.setDate(d.getDate() + n); return toISO(d); };
+const mondayOf = iso => addDays(iso, -((fromISO(iso).getDay() + 6) % 7));
+
+function parseCSV(text) {
+  text = (text || '').replace(/^﻿/, '');
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  if (!rows.length) return [];
+  const head = rows.shift().map(h => h.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''));
+  return rows.filter(r => r.some(x => x.trim() !== '')).map(r => {
+    const o = {}; head.forEach((h, i) => { o[h] = (r[i] || '').trim(); }); return o;
+  });
+}
+/* accepts 10:00, 10am, 3.30pm, 2:30 PM, 14:00:00 */
+function parseTime(s) {
+  if (!s) return null;
+  s = String(s).trim().toLowerCase().replace(/\./g, ':').replace(/:+$/, '');
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*(am|pm|a|p)?$/);
+  if (!m) return null;
+  let h = +m[1]; const mi = +(m[2] || 0); const ap = m[3];
+  if (ap) { if (ap[0] === 'p' && h < 12) h += 12; if (ap[0] === 'a' && h === 12) h = 0; }
+  if (h > 23 || mi > 59) return null;
+  return h * 60 + mi;
+}
+/* accepts 2026-11-05, 5/11/2026 (day first), 5 Nov 2026 */
+function parseDate(s) {
+  s = (s || '').trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return m[1] + '-' + pad(+m[2]) + '-' + pad(+m[3]);
+  if ((m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/))) {
+    let a = +m[1], b = +m[2], y = +m[3]; if (y < 100) y += 2000;
+    if (b > 12 && a <= 12) { const t = a; a = b; b = t; }     // looked like month/day
+    return y + '-' + pad(b) + '-' + pad(a);
+  }
+  const d = new Date(s + ' 12:00');
+  return isNaN(d) ? null : toISO(d);
+}
+const DOW = { sun:0, mon:1, tue:2, wed:3, thu:4, fri:5, sat:6 };
+const parseDow = s => { const k = (s || '').trim().slice(0, 3).toLowerCase(); return k in DOW ? DOW[k] : null; };
+const isOff = s => /^(n|no|false|0|off|pause|paused)$/i.test((s || '').trim());
+const keyOf = s => (s || '').trim().toLowerCase();
+
+/* --------- turn the three sheets into dated events (pure function) --------- */
+function buildOccurrences(lib, weekly, changes, fromISOd, toISOd) {
+  const occ = [];
+  const mk = (date, r, extra) => Object.assign({
+    date, event: (r.event || '').trim(), title: (r.title || '').trim(), location: (r.location || '').trim(), note: (r.note || '').trim(),
+    start: parseTime(r.start), end: parseTime(r.end), status: 'ok'
+  }, extra || {});
+  for (let d = fromISOd; d <= toISOd; d = addDays(d, 1)) {
+    const dow = fromISO(d).getDay();
+    weekly.forEach(r => {
+      if (parseDow(r.day) === dow && !isOff(r.active) && (r.event || '').trim()) occ.push(mk(d, r));
+    });
+  }
+  const sameKey = (o, r) => keyOf(o.event) === keyOf(r.event);
+  changes.forEach(r => {
+    const date = parseDate(r.date); if (!date || date < fromISOd || date > toISOd) return;
+    const act = (r.action || '').trim().toLowerCase();
+    const matches = occ.filter(o => o.date === date && sameKey(o, r));
+    if (act.startsWith('add')) { occ.push(mk(date, r, { added: true })); }
+    else if (act.startsWith('cancel')) {
+      let m = matches; const st = parseTime(r.start);
+      if (m.length > 1 && st != null) { const f = m.filter(o => o.start === st); if (f.length) m = f; }
+      if (m.length) m.forEach(o => { o.status = 'cancelled'; if (r.note && r.note.trim()) o.note = r.note.trim(); });
+      else occ.push(mk(date, r, { status: 'cancelled' }));
+    } else if (act.startsWith('change')) {
+      if (matches.length) matches.forEach(o => {
+        const st = parseTime(r.start), en = parseTime(r.end);
+        if (st != null) o.start = st; if (en != null) o.end = en;
+        if ((r.location || '').trim()) o.location = r.location.trim();
+        if ((r.title || '').trim()) o.title = r.title.trim();
+        if ((r.note || '').trim()) o.note = r.note.trim();
+        o.changed = true;
+      });
+      else occ.push(mk(date, r, { added: true }));
+    } else if (act.startsWith('remove')) {
+      matches.forEach(o => { occ.splice(occ.indexOf(o), 1); });
+    }
+  });
+  occ.forEach(o => { o.lib = lib.get(keyOf(o.event)) || {}; });
+  occ.sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? 9999) - (b.start ?? 9999) || a.event.localeCompare(b.event));
+  return occ;
+}
+
+/* ------------------------- computer voices (TTS) ------------------------- */
+const hasTTS = 'speechSynthesis' in window;
+if (hasTTS) { speechSynthesis.getVoices(); }
+const normLang = l => (l || '').replace('_', '-').toLowerCase();
+const voiceScore = v => (/premium|enhanced|natural/i.test(v.name || '') ? 2 : 0) + (v.localService ? 1 : 0);
+function pickVoice(def) {
+  if (!hasTTS || !def.voices.length) return null;
+  const vs = speechSynthesis.getVoices(); if (!vs.length) return null;
+  const best = list => list.sort((a, b) => voiceScore(b) - voiceScore(a))[0];
+  for (const c of def.voices) { const m = vs.filter(v => normLang(v.lang) === normLang(c)); if (m.length) return best(m); }
+  if (def.base) {
+    const base = normLang(def.voices[0]).split('-')[0];
+    const m = vs.filter(v => normLang(v.lang).split('-')[0] === base); if (m.length) return best(m);
+  }
+  return null;
+}
+function voiceMaybe(def) {                // true if a voice exists, or voices have not loaded yet
+  if (!hasTTS || !def.voices.length) return false;
+  if (!speechSynthesis.getVoices().length) return true;
+  return !!pickVoice(def);
+}
+function splitSentences(text, max = 140) {
+  const parts = text.replace(/\s*\n+\s*/g, '. ').replace(/\.\s*\./g, '.').match(/[^.!?。！？;；]+[.!?。！？;；]*/g) || [text];
+  const out = []; let cur = '';
+  parts.forEach(p => { if ((cur + p).length > max && cur) { out.push(cur.trim()); cur = p; } else cur += p; });
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+function createPlayer(onState, onFail) {
+  let audio = null, token = 0; const keep = [];
+  function stop() {
+    token++;
+    if (audio) { audio.onended = audio.onerror = null; audio.pause(); audio = null; }
+    if (hasTTS) speechSynthesis.cancel();
+    onState(false);
+  }
+  async function play(o) {                 // {text, def, audioUrl, slow}
+    const was = hasTTS && (speechSynthesis.speaking || speechSynthesis.pending);
+    stop(); const my = token;
+    if (o.audioUrl) {
+      audio = new Audio(o.audioUrl); audio.playbackRate = o.slow ? AUDIO_SLOW : AUDIO_NORMAL;
+      audio.onended = () => { if (my === token) onState(false); };
+      audio.onerror = () => { if (my === token) { onState(false); onFail('fail'); } };
+      onState(true);
+      try { await audio.play(); } catch (e) { if (my === token) { onState(false); onFail('fail'); } }
+      return;
+    }
+    const voice = pickVoice(o.def);
+    if (!voice || !(o.text || '').trim()) { onFail('novoice'); return; }
+    const parts = splitSentences(o.text); let i = 0; onState(true);
+    const next = () => {
+      if (my !== token) return;
+      if (i >= parts.length) { onState(false); return; }
+      const u = new SpeechSynthesisUtterance(parts[i++]);
+      u.voice = voice; u.lang = voice.lang; u.rate = o.slow ? RATE_SLOW : RATE_NORMAL; u.onend = next;
+      u.onerror = e => { if (my !== token || e.error === 'canceled' || e.error === 'interrupted') return; onState(false); onFail('fail'); };
+      keep.push(u); if (keep.length > 12) keep.shift();
+      speechSynthesis.speak(u);
+    };
+    if (was) setTimeout(next, 90); else next();
+  }
+  return { play, stop };
+}
+
+/* ------------------------------- state ------------------------------- */
+const state = { lang: 'en', view: 'today', slow: store('cal-slow') === '1', sizeIdx: 1 };
+const savedSize = parseInt(store('cal-size'), 10);
+if (savedSize >= 0 && savedSize < DESC_SIZES.length) state.sizeIdx = savedSize;
+let DATA = null;                          // {lib, weekly, changes, langs, stamp, demo, stale}
+let activeBtn = null, failBox = null;
+
+const player = createPlayer(playing => {
+  document.querySelectorAll('.listen').forEach(b => {
+    const on = playing && b === activeBtn;
+    b.classList.toggle('playing', on);
+    const lab = b.querySelector('.lab'); if (lab) lab.textContent = on ? UI[state.lang].stop : UI[state.lang].listen;
+  });
+}, reason => {
+  if (failBox) { failBox.hidden = false; failBox.textContent = UI[state.lang][reason === 'novoice' ? 'novoice' : 'fail']; }
+});
+
+const TODAY = Q.get('today') || toISO(new Date());
+function nowMinutes() {
+  if (Q.get('now')) { const m = parseTime(Q.get('now')); if (m != null) return m; }
+  const d = new Date(); return d.getHours() * 60 + d.getMinutes();
+}
+
+/* ------------------------------ formatting ------------------------------ */
+function fmt(date, locale, opts) { try { return new Intl.DateTimeFormat(locale, opts).format(date); } catch (e) { return new Intl.DateTimeFormat('en-SG', opts).format(date); } }
+const fmtDay = (iso, lang) => fmt(fromISO(iso), LANG[lang].locale, { weekday: 'long', day: 'numeric', month: 'long' });
+function fmtTime(min, lang) { const d = new Date(2000, 0, 1, Math.floor(min / 60), min % 60); return fmt(d, LANG[lang].locale, { hour: 'numeric', minute: '2-digit' }); }
+const resolveAudio = n => { n = (n || '').trim(); if (!n) return ''; if (/^(https?:|blob:|data:)/i.test(n)) return n; try { return new URL(n, location.href).href; } catch (e) { return n; } };
+
+/* --------------------------- what a card shows --------------------------- */
+function descFor(o, lang) {
+  const l = o.lib || {};
+  let t = l['desc_' + lang];
+  if (!t && ['yue', 'nan', 'tws', 'hak'].includes(lang)) t = l.desc_zh;
+  return t || l.desc_en || '';
+}
+function namesFor(o, lang) {
+  const zh = o.title ? '' : ((o.lib || {}).name_zh || '');
+  const en = o.title || o.event;
+  if (ZH_SCRIPT.includes(lang) && zh) return { main: zh, sub: en };
+  return { main: en, sub: lang === 'en' ? zh : '' };
+}
+function canListen(o, lang) {
+  const l = o.lib || {};
+  if ((l['audio_' + lang] || '').trim()) return true;
+  return !!descFor(o, lang) && voiceMaybe(LANG[lang]);
+}
+
+/* -------------------------------- render -------------------------------- */
+const SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+const ICON_BY_CAT = { exercise:'🏃', games:'🎲', social:'🎉', talk:'🎤', notice:'⚠️' };
+
+function renderTop() {
+  const lang = state.lang;
+  const top = document.getElementById('top'); top.innerHTML = '';
+  const smaller = el('button', { class: 'tool', type: 'button', 'aria-label': 'Smaller text', onclick: () => setSize(state.sizeIdx - 1) }, 'A−');
+  const bigger = el('button', { class: 'tool', type: 'button', 'aria-label': 'Bigger text', onclick: () => setSize(state.sizeIdx + 1) }, 'A+');
+  top.append(el('div', {}, el('h1', {}, CFG.title), el('p', { class: 'date' }, fmtDay(TODAY, lang))), el('span', { class: 'size' }, smaller, bigger));
+
+  const c = document.getElementById('controls'); c.innerHTML = '';
+  const langs = el('div', { class: 'langs', role: 'group', 'aria-label': 'Language' });
+  const avail = DATA ? DATA.langs : ['en'];
+  LANGS.filter(l => avail.includes(l.code)).forEach(l => langs.append(
+    el('button', { class: 'lang', type: 'button', 'aria-pressed': String(l.code === lang), onclick: () => { state.lang = l.code; render(); } },
+      el('span', { class: 'main' }, l.label), el('span', { class: 'sub' }, l.sub))));
+  const ui = UI[lang];
+  const views = el('div', { class: 'views', role: 'group' });
+  [['today', ui.today], ['week', ui.week], ['next', ui.next]].forEach(([v, label]) => views.append(
+    el('button', { class: 'view', type: 'button', 'aria-pressed': String(state.view === v), onclick: () => { state.view = v; render(); } }, label)));
+  views.append(el('span', { class: 'spacer' }),
+    el('button', { class: 'tool', type: 'button', 'aria-pressed': String(state.slow), onclick: () => { state.slow = !state.slow; store('cal-slow', state.slow ? '1' : '0'); render(); } }, '🐢 ' + ui.slower));
+  c.append(langs, views);
+}
+
+function badgesFor(o, ui, isToday, nowMin) {
+  const out = [];
+  if (o.status === 'cancelled') out.push(el('span', { class: 'badge b-cancel' }, ui.cancelled));
+  else if (isToday && o.start != null) {
+    const end = o.end != null ? o.end : o.start + 60;
+    if (nowMin >= o.start && nowMin < end) out.push(el('span', { class: 'badge b-now' }, ui.now));
+    else if (nowMin >= end) out.push(el('span', { class: 'badge b-done' }, ui.done));
+  }
+  const n = o.note || '';
+  if (/walk/i.test(n)) out.push(el('span', { class: 'badge b-walk' }, ui.walk));
+  else if (/regist|sign.?up|报名|報名/i.test(n)) out.push(el('span', { class: 'badge b-reg' }, ui.reg));
+  else if (n) out.push(el('span', { class: 'badge b-note' }, n));
+  return out;
+}
+
+function renderCard(o, isToday, nowMin) {
+  const lang = state.lang, ui = UI[lang], l = o.lib || {};
+  const catKey = (l.category || '').toLowerCase();
+  const cat = ['exercise', 'games', 'social', 'talk', 'notice'].includes(catKey) ? catKey : 'social';
+  const nm = namesFor(o, lang);
+  const loc = o.location || CFG.defaultLocation;
+  const end = o.end != null ? o.end : (o.start != null ? o.start + 60 : null);
+  const finished = isToday && o.status !== 'cancelled' && end != null && nowMin >= end;
+  const ongoing = isToday && o.status !== 'cancelled' && o.start != null && nowMin >= o.start && nowMin < end;
+  const card = el('article', { class: 'card cat-' + cat + (o.status === 'cancelled' ? ' cancelled' : '') + (finished ? ' done' : '') + (ongoing ? ' now' : '') });
+  card.append(el('div', { class: 'time' },
+    el('span', { class: 't1' }, o.start != null ? fmtTime(o.start, lang) : '—'),
+    o.end != null ? el('span', { class: 't2' }, '– ' + fmtTime(o.end, lang)) : null));
+  const body = el('div', { class: 'body' });
+  body.append(el('h3', {}, el('span', { class: 'ic', 'aria-hidden': 'true' }, l.icon || ICON_BY_CAT[cat]),
+    el('span', {}, nm.main, nm.sub ? el('span', { class: 'sub' }, nm.sub) : null)));
+  body.append(el('div', { class: 'meta' }, loc ? el('span', {}, '📍 ' + loc) : null, ...badgesFor(o, ui, isToday, nowMin)));
+  const text = descFor(o, lang);
+  if (text && o.status !== 'cancelled') body.append(el('p', { class: 'desc', lang: ({ en:'en', zh:'zh-CN', ms:'ms', ta:'ta', yue:'yue-HK' }[lang] || 'zh-CN') }, text));
+  if (o.status !== 'cancelled' && canListen(o, lang)) {
+    const note = el('div', { class: 'note', role: 'status', hidden: true });
+    const ic = el('span', { 'aria-hidden': 'true', style: 'display:inline-flex' }); ic.innerHTML = SPEAKER;
+    const btn = el('button', { class: 'listen', type: 'button', 'aria-label': ui.listen + ': ' + nm.main }, ic, el('span', { class: 'lab' }, ui.listen), el('span', { class: 'eq', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')));
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('playing')) { player.stop(); return; }
+      document.querySelectorAll('.note').forEach(n => { n.hidden = true; });
+      activeBtn = btn; failBox = note;
+      player.play({ text: nm.main + '. ' + text, def: LANG[lang], audioUrl: resolveAudio(l['audio_' + lang]), slow: state.slow });
+    });
+    body.append(btn, note);
+  }
+  card.append(body);
+  return card;
+}
+
+function renderMain() {
+  const main = document.getElementById('main'); main.innerHTML = '';
+  const ui = UI[state.lang];
+  if (!DATA) { main.append(el('div', { class: 'empty' }, ui.loading)); return; }
+  if (DATA.error) {
+    main.append(el('div', { class: 'setup' }, el('strong', {}, 'Setup needed. '),
+      'Open ', el('code', {}, 'config.js'), ' and paste your three Google Sheet links (Events, Weekly, Changes), or add ', el('code', {}, 'demo-data.js'), ' to see a sample. ', DATA.error));
+    return;
+  }
+  const monday = mondayOf(TODAY);
+  const occ = DATA.occ;
+  let from, to;
+  if (state.view === 'today') { from = to = TODAY; }
+  else if (state.view === 'week') { from = TODAY; to = addDays(monday, 6); }
+  else { from = addDays(monday, 7); to = addDays(monday, 13); }
+  const list = occ.filter(o => o.date >= from && o.date <= to);
+  if (!list.length) {
+    const box = el('div', { class: 'empty' }, state.view === 'today' ? ui.none : ui.none2);
+    if (state.view === 'today') box.append(el('div', {}, el('button', { class: 'tool', type: 'button', onclick: () => { state.view = 'week'; render(); } }, ui.see)));
+    main.append(box); return;
+  }
+  const nowMin = nowMinutes();
+  let lastDate = null;
+  list.forEach(o => {
+    if (state.view !== 'today' && o.date !== lastDate) {
+      main.append(el('h2', { class: 'day' }, fmtDay(o.date, state.lang), o.date === TODAY ? el('span', { class: 'istoday' }, ui.today) : null));
+      lastDate = o.date;
+    }
+    main.append(renderCard(o, o.date === TODAY, nowMin));
+  });
+}
+
+function renderFoot() {
+  const f = document.getElementById('foot'); f.innerHTML = '';
+  (CFG.footer || []).forEach(t => f.append(el('p', {}, t)));
+  if (DATA && DATA.stamp) {
+    const d = new Date(DATA.stamp);
+    f.append(el('p', { class: 'meta-small' }, UI[state.lang].updated + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) +
+      (DATA.demo ? '  ·  Sample schedule – connect your Google Sheet in config.js' : '') + (DATA.stale ? '  ·  (saved copy – could not reach the Google Sheet)' : '')));
+  }
+}
+
+function setSize(i) {
+  state.sizeIdx = Math.max(0, Math.min(DESC_SIZES.length - 1, i)); store('cal-size', String(state.sizeIdx));
+  document.documentElement.style.setProperty('--desc', DESC_SIZES[state.sizeIdx] + 'rem');
+}
+function render() {
+  player.stop(); activeBtn = failBox = null;
+  document.documentElement.lang = ({ en:'en', zh:'zh-CN', ms:'ms', ta:'ta', yue:'yue-HK' }[state.lang] || 'zh-CN');
+  renderTop(); renderMain(); renderFoot();
+}
+
+/* ------------------------------ loading data ------------------------------ */
+async function fetchText(url) {
+  const u = url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
+  const r = await fetch(u, { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.text();
+}
+function buildData(texts, extra) {
+  const events = parseCSV(texts.events), weekly = parseCSV(texts.weekly), changes = parseCSV(texts.changes || '');
+  const lib = new Map(); events.forEach(r => { if ((r.event || '').trim()) lib.set(keyOf(r.event), r); });
+  const langs = LANGS.filter(l => l.code === 'en' || events.some(r => (r['desc_' + l.code] || '').trim() || (r['audio_' + l.code] || '').trim())).map(l => l.code);
+  const monday = mondayOf(TODAY);
+  const occ = buildOccurrences(lib, weekly, changes, monday, addDays(monday, 13));
+  return Object.assign({ lib, weekly, changes, langs, occ, stamp: Date.now() }, extra || {});
+}
+async function load() {
+  const S = CFG.sheets || {};
+  let texts = null, extra = {};
+  if (S.events && S.weekly) {
+    try {
+      const [events, weekly, changes] = await Promise.all([fetchText(S.events), fetchText(S.weekly), S.changes ? fetchText(S.changes) : Promise.resolve('')]);
+      texts = { events, weekly, changes };
+      store('cal-cache', JSON.stringify(texts));
+    } catch (e) {
+      const c = store('cal-cache');
+      if (c) { try { texts = JSON.parse(c); extra.stale = true; } catch (x) {} }
+      if (!texts) { DATA = { error: 'Could not read the Google Sheet (' + e.message + '). Check that each tab is published as CSV.' }; render(); return; }
+    }
+  } else if (window.DEMO_CSV) { texts = window.DEMO_CSV; extra.demo = true; }
+  else { DATA = { error: '' }; render(); return; }
+  if (state.lang && DATA && DATA.langs && !DATA.langs.includes(state.lang)) state.lang = 'en';
+  try { DATA = buildData(texts, extra); }
+  catch (e) { DATA = { error: 'The sheet could not be read (' + e.message + ').' }; }
+  if (DATA.langs && !DATA.langs.includes(state.lang)) state.lang = 'en';
+  render();
+}
+
+/* ------------------------- kiosk behaviour & start ------------------------- */
+let lastTouch = Date.now();
+['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { lastTouch = Date.now(); }, { passive: true }));
+if (IDLE > 0) setInterval(() => {
+  if (Date.now() - lastTouch < IDLE * 1000) return;
+  if (state.lang !== 'en' || state.view !== 'today' || window.scrollY > 0) {
+    state.lang = 'en'; state.view = 'today'; render(); window.scrollTo(0, 0);
+  }
+}, 1000);
+if (hasTTS) {
+  let t = null;
+  speechSynthesis.onvoiceschanged = () => { clearTimeout(t); t = setTimeout(() => { if (!document.querySelector('.listen.playing')) render(); }, 200); };
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && CFG.sheets && CFG.sheets.events) load(); });
+if (CFG.refreshMinutes > 0 && CFG.sheets && CFG.sheets.events) setInterval(() => { if (!document.querySelector('.listen.playing')) load(); }, CFG.refreshMinutes * 60000);
+
+setSize(state.sizeIdx);
+render();
+load();
+window.__cal = { parseCSV, parseTime, parseDate, buildOccurrences, state, render };
+})();
+</script>
+</body>
+</html>
