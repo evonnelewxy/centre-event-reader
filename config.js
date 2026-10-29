@@ -13,9 +13,9 @@ window.CENTRE_CONFIG = {
   title: "PCS Cedar Tree AAC @ Potong Pasir 108",
 
   sheets: {
-    events:  "",   // link for the Events tab
-    weekly:  "",   // link for the Weekly tab
-    changes: ""    // link for the Changes tab
+    events:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCwhXW0SWh5NKecxsxXZXvrJVHt-Wcrpc6pH1jRZKkxsvER63Vk_GLc7f2Oj2RHdueJ7La_ukWErBH/pub?gid=447312105&single=true&output=csv",   // link for the Events tab
+    weekly:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCwhXW0SWh5NKecxsxXZXvrJVHt-Wcrpc6pH1jRZKkxsvER63Vk_GLc7f2Oj2RHdueJ7La_ukWErBH/pub?gid=549861951&single=true&output=csv",   // link for the Weekly tab
+    changes: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCwhXW0SWh5NKecxsxXZXvrJVHt-Wcrpc6pH1jRZKkxsvER63Vk_GLc7f2Oj2RHdueJ7La_ukWErBH/pub?gid=554360820&single=true&output=csv"    // link for the Changes tab
   },
 
   defaultLocation: "Block 108 HDB Potong Pasir",
