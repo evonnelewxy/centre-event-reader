@@ -36,6 +36,11 @@
   .controls { position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px; border-bottom:2px solid var(--line); margin-bottom:6px; }
   .langs, .views { display:flex; flex-wrap:wrap; gap:8px; }
   .views { margin-top:10px; align-items:center; }
+  .seg { display:inline-flex; border:3px solid var(--slate); border-radius:18px; overflow:hidden; background:var(--card); }
+  .seg button { min-height:52px; padding:0 18px; border:0; background:transparent; color:var(--slate); font-size:1.25rem; font-weight:800; display:inline-flex; align-items:center; gap:8px; }
+  .seg button + button { border-left:3px solid var(--slate); }
+  .seg button[aria-pressed="true"] { background:var(--slate); color:#fff; }
+  .rng { display:flex; flex-wrap:wrap; gap:8px; }
   .lang {
     min-height:58px; padding:6px 16px; border-radius:16px; border:3px solid var(--teal); background:var(--card); color:var(--teal-dark);
     display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1;
@@ -56,15 +61,25 @@
   .day { margin:24px 0 10px; font-size:1.5rem; font-weight:800; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .day .istoday { font-size:1rem; padding:3px 12px; border-radius:999px; background:var(--orange); color:#fff; }
   .card {
-    display:grid; grid-template-columns:190px 1fr; background:var(--card); border:2px solid var(--line);
+    display:grid; grid-template-columns:210px 1fr; background:var(--card); border:2px solid var(--line);
     border-left:10px solid var(--c,#8A8A8A); border-radius:20px; margin-bottom:14px; overflow:hidden;
   }
   .card.now { box-shadow:0 0 0 4px #F59E0B; }
   .card.done { opacity:.62; }
   .card.cancelled { opacity:.85; background:#FAF6F6; }
-  .cat-exercise { --c:#2F855A; --t:#E6F4EA; } .cat-games { --c:#C2185B; --t:#FCE8F1; } .cat-social { --c:#C2410C; --t:#FDEDE2; }
-  .cat-talk { --c:#1D4ED8; --t:#E6EDFC; } .cat-notice { --c:#6B7280; --t:#EEEEEE; }
-  .time { background:var(--t,#F1F1F1); padding:16px; display:flex; flex-direction:column; justify-content:center; gap:2px; }
+  .cat-exercise { --c:#2F855A; --t:#E6F4EA; --m:#BFE3CB; } .cat-games { --c:#C2185B; --t:#FCE8F1; --m:#F6BFD7; } .cat-social { --c:#C2410C; --t:#FDEDE2; --m:#F8C9A8; }
+  .cat-talk { --c:#1D4ED8; --t:#E6EDFC; --m:#BFD0F7; } .cat-health { --c:#7E22CE; --t:#F3E8FF; --m:#DDBFF7; } .cat-notice { --c:#6B7280; --t:#EEEEEE; --m:#D4D4D8; }
+  .side { display:flex; flex-direction:column; background:var(--t,#F1F1F1); }
+  .art { position:relative; flex:1 1 auto; min-height:150px; overflow:hidden; display:grid; place-items:center;
+    background:radial-gradient(circle at 30% 25%, #fff 0, var(--t) 38%, var(--m) 100%); }
+  .art .big { font-size:4.8rem; line-height:1; filter:drop-shadow(0 6px 6px rgba(0,0,0,.18)); transform:rotate(-4deg); }
+  .art .sm { position:absolute; font-size:1.9rem; line-height:1; opacity:.92; }
+  .art .s1 { top:10px; left:12px; transform:rotate(-12deg); } .art .s2 { bottom:10px; right:12px; transform:rotate(10deg); } .art .s3 { top:12px; right:14px; font-size:1.5rem; opacity:.7; }
+  .art img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .art .pin { position:absolute; left:10px; bottom:10px; width:50px; height:50px; border-radius:50%; background:#fff; display:none; place-items:center; font-size:1.9rem; box-shadow:0 2px 6px rgba(0,0,0,.3); z-index:1; }
+  .art.has-img .pin { display:grid; }
+  .cancelled .art { filter:grayscale(.85); }
+  .time { padding:14px 16px; display:flex; flex-direction:column; justify-content:center; gap:2px; border-top:3px solid var(--c); }
   .time .t1 { font-size:1.55rem; font-weight:800; line-height:1.15; }
   .time .t2 { font-size:1.1rem; font-weight:600; color:var(--muted); }
   .cancelled .time .t1, .cancelled .time .t2 { text-decoration:line-through; }
@@ -76,7 +91,8 @@
   .badge { padding:4px 12px; border-radius:999px; font-size:1rem; font-weight:800; }
   .b-reg { background:#E6EDFC; color:#173FA6; } .b-walk { background:#DDF3E4; color:#14663A; }
   .b-now { background:#F59E0B; color:#3A2200; } .b-done { background:#E5E1DA; color:#4B4650; }
-  .b-cancel { background:#FBE3E3; color:#8E1B1B; } .b-note { background:#EFE9DD; color:#4B4650; }
+  .b-cancel { background:#FBE3E3; color:#8E1B1B; } .b-note { background:#EFE9DD; color:#4B4650; } .b-full { background:#FDE68A; color:#5A3A00; }
+  .where { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px; background:#F4EEE2; }
   .desc { margin:0; font-size:var(--desc); line-height:1.55; overflow-wrap:anywhere; }
   .listen {
     align-self:flex-start; min-height:64px; padding:0 28px; border:none; border-radius:18px; background:var(--orange); color:#fff;
@@ -96,12 +112,68 @@
   .empty .tool { margin-top:16px; font-size:1.3rem; min-height:60px; }
   .setup { background:var(--card); border:2px solid var(--line); border-radius:20px; padding:22px; font-size:1.15rem; }
   .setup code { background:#F4EEE2; padding:2px 6px; border-radius:6px; }
+  /* month calendar */
+  .calhead { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:18px 0 12px; }
+  .calhead h2 { margin:0; font-size:clamp(1.5rem,4vw,2.1rem); flex:1; min-width:150px; text-align:center; }
+  .nav { min-height:60px; min-width:60px; padding:0 18px; border-radius:16px; border:3px solid var(--slate); background:var(--card); color:var(--slate); font-size:1.6rem; font-weight:800; line-height:1; }
+  .nav:disabled { opacity:.3; cursor:default; }
+  .nav.today { font-size:1.15rem; }
+  .grid { display:grid; gap:6px; grid-template-columns:repeat(var(--cols,5), minmax(0,1fr)); }
+  .dow { text-align:center; font-weight:800; font-size:1.1rem; color:var(--muted); padding:4px 0; }
+  .cell { text-align:left; background:var(--card); border:2px solid var(--line); border-radius:16px; padding:8px 8px 8px; min-height:176px; display:flex; flex-direction:column; gap:5px; font:inherit; color:inherit; min-width:0; }
+  button.cell:active { transform:scale(.98); }
+  .cell.off { background:transparent; border:2px dashed var(--line); opacity:.55; }
+  .cell.today { border-color:var(--orange); box-shadow:0 0 0 3px var(--orange); }
+  .cell.hol { background:#FFF3DA; }
+  .cell.empty { background:#FBF7EF; }
+  .dn { display:flex; align-items:center; justify-content:space-between; font-size:1.45rem; font-weight:800; line-height:1; }
+  .dn .tag { font-size:.8rem; padding:2px 8px; border-radius:999px; background:var(--orange); color:#fff; }
+  .chip { display:grid; grid-template-columns:auto 1fr; column-gap:6px; align-items:center; padding:4px 6px; border-radius:10px; background:var(--t); border-left:6px solid var(--c); min-width:0; }
+  .chip .ci { font-size:1.35rem; line-height:1; grid-row:1 / span 2; }
+  .chip .ct { font-size:.82rem; font-weight:800; color:var(--c); line-height:1.1; }
+  .chip .cn { font-size:.9rem; font-weight:700; line-height:1.15; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere; }
+  .chip.x { background:#F3F0F0; border-left-color:#C4B5B5; opacity:.8; }
+  .chip.x .cn, .chip.x .ct { text-decoration:line-through; color:#7A6F6F; }
+  .more { font-size:.95rem; font-weight:800; color:var(--muted); padding-left:4px; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px 12px; margin-top:16px; font-size:1.05rem; font-weight:700; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; padding:4px 12px 4px 8px; border-radius:999px; background:var(--t); border:2px solid var(--c); }
+  .hint { margin:10px 0 0; text-align:center; color:var(--muted); font-size:1.05rem; font-weight:600; }
+
+  /* day sheet */
+  body.lock { overflow:hidden; }
+  .sheet { position:fixed; inset:0; z-index:20; display:flex; justify-content:center; align-items:flex-end; }
+  .sheet-bg { position:absolute; inset:0; background:rgba(20,16,24,.55); }
+  .sheet-panel { position:relative; width:min(980px,100%); max-height:94vh; background:var(--bg); border-radius:28px 28px 0 0; display:flex; flex-direction:column; box-shadow:0 -8px 30px rgba(0,0,0,.35); }
+  .sheet-head { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:2px solid var(--line); flex-wrap:wrap; }
+  .sheet-head h2 { margin:0; flex:1; min-width:180px; font-size:clamp(1.3rem,3.6vw,1.8rem); text-align:center; }
+  .sheet-body { overflow:auto; padding:16px 16px 28px; -webkit-overflow-scrolling:touch; }
+  .closebtn { min-height:60px; padding:0 22px; border-radius:16px; border:0; background:var(--orange); color:#fff; font-size:1.3rem; font-weight:800; box-shadow:0 4px 0 var(--orange-dark); }
+  .sheet .empty { margin:0; }
+
   footer { margin-top:30px; padding-top:14px; border-top:2px solid var(--line); color:var(--muted); font-size:1.05rem; }
   footer p { margin:4px 0; }
   footer .meta-small { font-size:.9rem; margin-top:12px; }
+  @media (max-width:760px) {
+    .cell { min-height:92px; padding:6px; border-radius:12px; }
+    .grid { gap:4px; }
+    .dn { font-size:1.15rem; } .dn .tag { display:none; }
+    .cell .cn, .cell .ct { display:none; }
+    .cell .chips { display:flex; flex-wrap:wrap; gap:3px; }
+    .chip { display:inline-flex; padding:2px 3px; border-left-width:3px; }
+    .chip .ci { font-size:1.2rem; }
+    .dow { font-size:.95rem; }
+  }
   @media (max-width:640px) {
     .controls { position:static; }
     .card { grid-template-columns:1fr; }
+    .art { min-height:0; height:130px; }
+    .calhead { gap:6px; flex-wrap:nowrap; }
+    .calhead h2 { min-width:0; font-size:1.2rem; line-height:1.2; }
+    .nav { min-width:50px; min-height:54px; padding:0 10px; }
+    .nav.today { font-size:1rem; padding:0 12px; }
+    .sheet-head { gap:6px; } .sheet-head h2 { min-width:0; flex-basis:100%; order:-1; }
+    .closebtn { padding:0 14px; flex:1; }
+    .seg button { padding:0 12px; font-size:1.1rem; }
     .time { flex-direction:row; align-items:baseline; gap:10px; flex-wrap:wrap; padding:12px 16px; }
     .listen { width:100%; justify-content:center; }
     .view { flex:1; padding:0 8px; font-size:1.1rem; }
@@ -116,6 +188,7 @@
   <main id="main" aria-live="polite"></main>
   <footer id="foot"></footer>
 </div>
+<div class="sheet" id="sheet" hidden></div>
 
 <script src="config.js"></script>
 <script src="demo-data.js"></script>
@@ -124,7 +197,7 @@
 'use strict';
 
 /* ------------------------------ settings ------------------------------ */
-const CFG = Object.assign({ title: 'Activities', sheets: {}, defaultLocation: '', footer: [], refreshMinutes: 15, idleSeconds: 120 }, window.CENTRE_CONFIG || {});
+const CFG = Object.assign({ title: 'Activities', sheets: {}, defaultLocation: '', footer: [], refreshMinutes: 15, idleSeconds: 120, scheduleFrom: '', scheduleUntil: '' }, window.CENTRE_CONFIG || {});
 const Q = new URLSearchParams(location.search);
 const IDLE = Q.has('idle') ? Number(Q.get('idle')) : CFG.idleSeconds;
 const RATE_NORMAL = 0.88, RATE_SLOW = 0.62, AUDIO_NORMAL = 1, AUDIO_SLOW = 0.75;
@@ -145,11 +218,11 @@ const LANG = Object.fromEntries(LANGS.map(l => [l.code, l]));
 const ZH_SCRIPT = ['zh', 'yue', 'nan', 'tws', 'hak'];
 
 const UI = {
-  en:  { today:'Today', week:'This week', next:'Next week', listen:'Listen', stop:'Stop', now:'Happening now', done:'Finished', cancelled:'Cancelled', reg:'Registration required', walk:'Walk-in welcome', none:'No activities today', none2:'Nothing planned yet', see:'See this week', slower:'Slower', updated:'Updated', loading:'Loading…', fail:'Sorry, the sound could not play. Please ask our staff for help.', novoice:'Sorry, this device cannot read this language aloud. Please ask our staff for help.' },
-  zh:  { today:'今天', week:'本周', next:'下周', listen:'点击收听', stop:'停止', now:'正在进行', done:'已结束', cancelled:'已取消', reg:'仅限报名参加', walk:'无需报名', none:'今天没有活动', none2:'暂时没有安排', see:'查看本周活动', slower:'慢一点', updated:'更新于', loading:'载入中…', fail:'抱歉，声音无法播放，请向工作人员求助。', novoice:'抱歉，此设备无法朗读这种语言，请向工作人员求助。' },
-  ms:  { today:'Hari ini', week:'Minggu ini', next:'Minggu depan', listen:'Dengar', stop:'Berhenti', now:'Sedang berlangsung', done:'Tamat', cancelled:'Dibatalkan', reg:'Pendaftaran diperlukan', walk:'Walk-in dialu-alukan', none:'Tiada aktiviti hari ini', none2:'Belum ada aktiviti', see:'Lihat minggu ini', slower:'Lebih perlahan', updated:'Dikemas kini', loading:'Memuatkan…', fail:'Maaf, bunyi tidak dapat dimainkan. Sila minta bantuan kakitangan.', novoice:'Maaf, peranti ini tidak dapat membaca bahasa ini. Sila minta bantuan kakitangan.' },
-  ta:  { today:'இன்று', week:'இந்த வாரம்', next:'அடுத்த வாரம்', listen:'கேளுங்கள்', stop:'நிறுத்து', now:'இப்போது நடக்கிறது', done:'முடிந்தது', cancelled:'ரத்து', reg:'பதிவு அவசியம்', walk:'நேரடியாக வரலாம்', none:'இன்று நிகழ்ச்சிகள் இல்லை', none2:'இன்னும் திட்டமிடப்படவில்லை', see:'இந்த வாரத்தைப் பாருங்கள்', slower:'மெதுவாக', updated:'புதுப்பிப்பு', loading:'ஏற்றுகிறது…', fail:'மன்னிக்கவும், ஒலி இயங்கவில்லை. ஊழியர்களின் உதவியைக் கேளுங்கள்.', novoice:'மன்னிக்கவும், இந்தச் சாதனம் இந்த மொழியைப் படிக்க முடியாது. ஊழியர்களின் உதவியைக் கேளுங்கள்.' },
-  yue: { today:'今日', week:'今個星期', next:'下個星期', listen:'聽一聽', stop:'停止', now:'進行緊', done:'已完結', cancelled:'已取消', reg:'需要報名', walk:'無需報名', none:'今日冇活動', none2:'暫時未有安排', see:'睇今個星期', slower:'慢啲', updated:'更新於', loading:'載入緊…', fail:'抱歉，聲音播放唔到，請同職員求助。', novoice:'抱歉，部機唔能夠讀呢種語言，請同職員求助。' }
+  en:  { list:'List', cal:'Calendar', allday:'All day', full:'Fully registered', more:'more', close:'Close', tap:'Touch a day to see what is on', prev:'Previous', next2:'Next', cats:{exercise:'Exercise', games:'Games', social:'Social', talk:'Talks', health:'Health', notice:'Notice'}, today:'Today', week:'This week', next:'Next week', listen:'Listen', stop:'Stop', now:'Happening now', done:'Finished', cancelled:'Cancelled', reg:'Registration required', walk:'Walk-in welcome', none:'No activities today', none2:'Nothing planned yet', see:'See this week', slower:'Slower', updated:'Updated', loading:'Loading…', fail:'Sorry, the sound could not play. Please ask our staff for help.', novoice:'Sorry, this device cannot read this language aloud. Please ask our staff for help.' },
+  zh:  { list:'列表', cal:'日历', allday:'全天', full:'名额已满', more:'更多', close:'关闭', tap:'点一下日期，查看当天活动', prev:'上一个', next2:'下一个', cats:{exercise:'运动', games:'游戏', social:'社交', talk:'讲座', health:'健康', notice:'通知'}, today:'今天', week:'本周', next:'下周', listen:'点击收听', stop:'停止', now:'正在进行', done:'已结束', cancelled:'已取消', reg:'仅限报名参加', walk:'无需报名', none:'今天没有活动', none2:'暂时没有安排', see:'查看本周活动', slower:'慢一点', updated:'更新于', loading:'载入中…', fail:'抱歉，声音无法播放，请向工作人员求助。', novoice:'抱歉，此设备无法朗读这种语言，请向工作人员求助。' },
+  ms:  { list:'Senarai', cal:'Kalendar', allday:'Sepanjang hari', full:'Pendaftaran penuh', more:'lagi', close:'Tutup', tap:'Sentuh satu hari untuk lihat aktiviti', prev:'Sebelumnya', next2:'Seterusnya', cats:{exercise:'Senaman', games:'Permainan', social:'Sosial', talk:'Ceramah', health:'Kesihatan', notice:'Notis'}, today:'Hari ini', week:'Minggu ini', next:'Minggu depan', listen:'Dengar', stop:'Berhenti', now:'Sedang berlangsung', done:'Tamat', cancelled:'Dibatalkan', reg:'Pendaftaran diperlukan', walk:'Walk-in dialu-alukan', none:'Tiada aktiviti hari ini', none2:'Belum ada aktiviti', see:'Lihat minggu ini', slower:'Lebih perlahan', updated:'Dikemas kini', loading:'Memuatkan…', fail:'Maaf, bunyi tidak dapat dimainkan. Sila minta bantuan kakitangan.', novoice:'Maaf, peranti ini tidak dapat membaca bahasa ini. Sila minta bantuan kakitangan.' },
+  ta:  { list:'பட்டியல்', cal:'நாள்காட்டி', allday:'நாள் முழுவதும்', full:'பதிவு நிரம்பியது', more:'மேலும்', close:'மூடு', tap:'நிகழ்ச்சிகளைப் பார்க்க ஒரு நாளைத் தொடுங்கள்', prev:'முந்தையது', next2:'அடுத்தது', cats:{exercise:'உடற்பயிற்சி', games:'விளையாட்டு', social:'சமூகம்', talk:'உரைகள்', health:'ஆரோக்கியம்', notice:'அறிவிப்பு'}, today:'இன்று', week:'இந்த வாரம்', next:'அடுத்த வாரம்', listen:'கேளுங்கள்', stop:'நிறுத்து', now:'இப்போது நடக்கிறது', done:'முடிந்தது', cancelled:'ரத்து', reg:'பதிவு அவசியம்', walk:'நேரடியாக வரலாம்', none:'இன்று நிகழ்ச்சிகள் இல்லை', none2:'இன்னும் திட்டமிடப்படவில்லை', see:'இந்த வாரத்தைப் பாருங்கள்', slower:'மெதுவாக', updated:'புதுப்பிப்பு', loading:'ஏற்றுகிறது…', fail:'மன்னிக்கவும், ஒலி இயங்கவில்லை. ஊழியர்களின் உதவியைக் கேளுங்கள்.', novoice:'மன்னிக்கவும், இந்தச் சாதனம் இந்த மொழியைப் படிக்க முடியாது. ஊழியர்களின் உதவியைக் கேளுங்கள்.' },
+  yue: { list:'列表', cal:'月曆', allday:'全日', full:'已額滿', more:'更多', close:'關閉', tap:'撳一下日子，睇當日活動', prev:'上一個', next2:'下一個', cats:{exercise:'運動', games:'遊戲', social:'社交', talk:'講座', health:'健康', notice:'通告'}, today:'今日', week:'今個星期', next:'下個星期', listen:'聽一聽', stop:'停止', now:'進行緊', done:'已完結', cancelled:'已取消', reg:'需要報名', walk:'無需報名', none:'今日冇活動', none2:'暫時未有安排', see:'睇今個星期', slower:'慢啲', updated:'更新於', loading:'載入緊…', fail:'抱歉，聲音播放唔到，請同職員求助。', novoice:'抱歉，部機唔能夠讀呢種語言，請同職員求助。' }
 };
 UI.nan = UI.tws = UI.hak = UI.zh;
 
@@ -257,7 +330,7 @@ function buildOccurrences(lib, weekly, changes, fromISOd, toISOd) {
     }
   });
   occ.forEach(o => { o.lib = lib.get(keyOf(o.event)) || {}; });
-  occ.sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? 9999) - (b.start ?? 9999) || a.event.localeCompare(b.event));
+  occ.sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? -1) - (b.start ?? -1) || a.event.localeCompare(b.event));
   return occ;
 }
 
@@ -325,8 +398,18 @@ function createPlayer(onState, onFail) {
   return { play, stop };
 }
 
+/* ----- which dates have a planned schedule, and the events on them ----- */
+function isPlanned(iso) { const h = DATA && DATA.hz; if (!h) return true; return (!h.from || iso >= h.from) && (!h.until || iso <= h.until); }
+function occIn(from, to) {
+  if (!DATA || !DATA.lib) return [];
+  const h = DATA.hz; let a = from, b = to;
+  if (h.from && a < h.from) a = h.from;
+  if (h.until && b > h.until) b = h.until;
+  return a > b ? [] : buildOccurrences(DATA.lib, DATA.weekly, DATA.changes, a, b);
+}
+
 /* ------------------------------- state ------------------------------- */
-const state = { lang: 'en', view: 'today', slow: store('cal-slow') === '1', sizeIdx: 1 };
+const state = { lang: 'en', view: 'today', mode: 'list', month: '', dayOpen: null, slow: store('cal-slow') === '1', sizeIdx: 1 };
 const savedSize = parseInt(store('cal-size'), 10);
 if (savedSize >= 0 && savedSize < DESC_SIZES.length) state.sizeIdx = savedSize;
 let DATA = null;                          // {lib, weekly, changes, langs, stamp, demo, stale}
@@ -352,7 +435,7 @@ function nowMinutes() {
 function fmt(date, locale, opts) { try { return new Intl.DateTimeFormat(locale, opts).format(date); } catch (e) { return new Intl.DateTimeFormat('en-SG', opts).format(date); } }
 const fmtDay = (iso, lang) => fmt(fromISO(iso), LANG[lang].locale, { weekday: 'long', day: 'numeric', month: 'long' });
 function fmtTime(min, lang) { const d = new Date(2000, 0, 1, Math.floor(min / 60), min % 60); return fmt(d, LANG[lang].locale, { hour: 'numeric', minute: '2-digit' }); }
-const resolveAudio = n => { n = (n || '').trim(); if (!n) return ''; if (/^(https?:|blob:|data:)/i.test(n)) return n; try { return new URL(n, location.href).href; } catch (e) { return n; } };
+const resolveAsset = n => { n = (n || '').trim(); if (!n) return ''; if (/^(https?:|blob:|data:)/i.test(n)) return n; try { return new URL(n, location.href).href; } catch (e) { return n; } };
 
 /* --------------------------- what a card shows --------------------------- */
 function descFor(o, lang) {
@@ -375,7 +458,21 @@ function canListen(o, lang) {
 
 /* -------------------------------- render -------------------------------- */
 const SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
-const ICON_BY_CAT = { exercise:'🏃', games:'🎲', social:'🎉', talk:'🎤', notice:'⚠️' };
+const CATS = ['exercise', 'games', 'social', 'talk', 'health', 'notice'];
+const ICON_BY_CAT = { exercise:'🏃', games:'🎲', social:'🎉', talk:'🎤', health:'🩺', notice:'⚠️' };
+const EXTRA_BY_CAT = { exercise:['🌿', '☀️'], games:['⭐', '🎯'], social:['😊', '🎈'], talk:['💡', '💬'], health:['❤️', '🌿'], notice:['📢', '🙏'] };
+const catOf = o => { const k = ((o.lib || {}).category || '').toLowerCase(); return CATS.includes(k) ? k : 'social'; };
+function iconsOf(o) {                       // {main, extra:[a,b]} - from the Icon column (space separated)
+  const cat = catOf(o), raw = ((o.lib || {}).icon || '').trim(), arr = raw ? raw.split(/\s+/) : [];
+  const extra = arr.slice(1, 3); while (extra.length < 2) extra.push(EXTRA_BY_CAT[cat][extra.length]);
+  return { main: arr[0] || ICON_BY_CAT[cat], extra };
+}
+function locIcon(loc) {
+  if (/zoom|online|webinar|teams/i.test(loc)) return '💻';
+  if (/town square|park|garden|outdoor|void deck/i.test(loc)) return '🌳';
+  if (/kwsh|hospital|clinic|polyclinic|nuh/i.test(loc)) return '🏥';
+  return '📍';
+}
 
 function renderTop() {
   const lang = state.lang;
@@ -392,8 +489,16 @@ function renderTop() {
       el('span', { class: 'main' }, l.label), el('span', { class: 'sub' }, l.sub))));
   const ui = UI[lang];
   const views = el('div', { class: 'views', role: 'group' });
-  [['today', ui.today], ['week', ui.week], ['next', ui.next]].forEach(([v, label]) => views.append(
-    el('button', { class: 'view', type: 'button', 'aria-pressed': String(state.view === v), onclick: () => { state.view = v; render(); } }, label)));
+  const seg = el('div', { class: 'seg', role: 'group', 'aria-label': ui.list + ' / ' + ui.cal });
+  [['list', '📋 ' + ui.list], ['cal', '📅 ' + ui.cal]].forEach(([m, label]) => seg.append(
+    el('button', { type: 'button', 'data-mode': m, 'aria-pressed': String(state.mode === m), onclick: () => { state.mode = m; state.dayOpen = null; render(); } }, label)));
+  views.append(seg);
+  if (state.mode === 'list') {
+    const rng = el('div', { class: 'rng' });
+    [['today', ui.today], ['week', ui.week], ['next', ui.next]].forEach(([v, label]) => rng.append(
+      el('button', { class: 'view', type: 'button', 'data-view': v, 'aria-pressed': String(state.view === v), onclick: () => { state.view = v; render(); } }, label)));
+    views.append(rng);
+  }
   views.append(el('span', { class: 'spacer' }),
     el('button', { class: 'tool', type: 'button', 'aria-pressed': String(state.slow), onclick: () => { state.slow = !state.slow; store('cal-slow', state.slow ? '1' : '0'); render(); } }, '🐢 ' + ui.slower));
   c.append(langs, views);
@@ -401,36 +506,50 @@ function renderTop() {
 
 function badgesFor(o, ui, isToday, nowMin) {
   const out = [];
-  if (o.status === 'cancelled') out.push(el('span', { class: 'badge b-cancel' }, ui.cancelled));
+  if (o.status === 'cancelled') out.push(el('span', { class: 'badge b-cancel' }, '✖ ' + ui.cancelled));
   else if (isToday && o.start != null) {
     const end = o.end != null ? o.end : o.start + 60;
-    if (nowMin >= o.start && nowMin < end) out.push(el('span', { class: 'badge b-now' }, ui.now));
-    else if (nowMin >= end) out.push(el('span', { class: 'badge b-done' }, ui.done));
+    if (nowMin >= o.start && nowMin < end) out.push(el('span', { class: 'badge b-now' }, '▶ ' + ui.now));
+    else if (nowMin >= end) out.push(el('span', { class: 'badge b-done' }, '✔ ' + ui.done));
   }
   const n = o.note || '';
-  if (/walk/i.test(n)) out.push(el('span', { class: 'badge b-walk' }, ui.walk));
-  else if (/regist|sign.?up|报名|報名/i.test(n)) out.push(el('span', { class: 'badge b-reg' }, ui.reg));
+  if (/full/i.test(n) || /名额已满|名額已滿/.test(n)) out.push(el('span', { class: 'badge b-full' }, '🈵 ' + ui.full));
+  else if (/walk/i.test(n)) out.push(el('span', { class: 'badge b-walk' }, '🚶 ' + ui.walk));
+  else if (/regist|sign.?up|报名|報名/i.test(n)) out.push(el('span', { class: 'badge b-reg' }, '📝 ' + ui.reg));
   else if (n) out.push(el('span', { class: 'badge b-note' }, n));
   return out;
 }
 
+/* the picture tile: a real photo if the Image column has one, otherwise a coloured tile drawn from the icons */
+function artFor(o) {
+  const ic = iconsOf(o), img = resolveAsset((o.lib || {}).image);
+  const art = el('div', { class: 'art', 'aria-hidden': 'true' },
+    el('span', { class: 'sm s1' }, ic.extra[0]), el('span', { class: 'sm s3' }, ic.extra[1]), el('span', { class: 'sm s2' }, ic.extra[1]),
+    el('span', { class: 'big' }, ic.main), el('span', { class: 'pin' }, ic.main));
+  if (img) {
+    const im = el('img', { src: img, alt: '', loading: 'lazy', decoding: 'async' });
+    im.addEventListener('error', () => { im.remove(); art.classList.remove('has-img'); });
+    art.classList.add('has-img'); art.append(im);
+  }
+  return art;
+}
+
 function renderCard(o, isToday, nowMin) {
   const lang = state.lang, ui = UI[lang], l = o.lib || {};
-  const catKey = (l.category || '').toLowerCase();
-  const cat = ['exercise', 'games', 'social', 'talk', 'notice'].includes(catKey) ? catKey : 'social';
+  const cat = catOf(o);
   const nm = namesFor(o, lang);
   const loc = o.location || CFG.defaultLocation;
   const end = o.end != null ? o.end : (o.start != null ? o.start + 60 : null);
   const finished = isToday && o.status !== 'cancelled' && end != null && nowMin >= end;
   const ongoing = isToday && o.status !== 'cancelled' && o.start != null && nowMin >= o.start && nowMin < end;
   const card = el('article', { class: 'card cat-' + cat + (o.status === 'cancelled' ? ' cancelled' : '') + (finished ? ' done' : '') + (ongoing ? ' now' : '') });
-  card.append(el('div', { class: 'time' },
-    el('span', { class: 't1' }, o.start != null ? fmtTime(o.start, lang) : '—'),
-    o.end != null ? el('span', { class: 't2' }, '– ' + fmtTime(o.end, lang)) : null));
+  card.append(el('div', { class: 'side' }, artFor(o), el('div', { class: 'time' },
+    el('span', { class: 't1' }, o.start != null ? fmtTime(o.start, lang) : ui.allday),
+    o.end != null ? el('span', { class: 't2' }, '– ' + fmtTime(o.end, lang)) : null)));
   const body = el('div', { class: 'body' });
-  body.append(el('h3', {}, el('span', { class: 'ic', 'aria-hidden': 'true' }, l.icon || ICON_BY_CAT[cat]),
+  body.append(el('h3', {}, el('span', { class: 'ic', 'aria-hidden': 'true' }, iconsOf(o).main),
     el('span', {}, nm.main, nm.sub ? el('span', { class: 'sub' }, nm.sub) : null)));
-  body.append(el('div', { class: 'meta' }, loc ? el('span', {}, '📍 ' + loc) : null, ...badgesFor(o, ui, isToday, nowMin)));
+  body.append(el('div', { class: 'meta' }, loc ? el('span', { class: 'where' }, locIcon(loc) + ' ' + loc) : null, ...badgesFor(o, ui, isToday, nowMin)));
   const text = descFor(o, lang);
   if (text && o.status !== 'cancelled') body.append(el('p', { class: 'desc', lang: ({ en:'en', zh:'zh-CN', ms:'ms', ta:'ta', yue:'yue-HK' }[lang] || 'zh-CN') }, text));
   if (o.status !== 'cancelled' && canListen(o, lang)) {
@@ -441,7 +560,7 @@ function renderCard(o, isToday, nowMin) {
       if (btn.classList.contains('playing')) { player.stop(); return; }
       document.querySelectorAll('.note').forEach(n => { n.hidden = true; });
       activeBtn = btn; failBox = note;
-      player.play({ text: nm.main + '. ' + text, def: LANG[lang], audioUrl: resolveAudio(l['audio_' + lang]), slow: state.slow });
+      player.play({ text: nm.main + '. ' + text, def: LANG[lang], audioUrl: resolveAsset(l['audio_' + lang]), slow: state.slow });
     });
     body.append(btn, note);
   }
@@ -449,24 +568,17 @@ function renderCard(o, isToday, nowMin) {
   return card;
 }
 
-function renderMain() {
-  const main = document.getElementById('main'); main.innerHTML = '';
+/* ---- list view ---- */
+function renderList(main) {
   const ui = UI[state.lang];
-  if (!DATA) { main.append(el('div', { class: 'empty' }, ui.loading)); return; }
-  if (DATA.error) {
-    main.append(el('div', { class: 'setup' }, el('strong', {}, 'Setup needed. '),
-      'Open ', el('code', {}, 'config.js'), ' and paste your three Google Sheet links (Events, Weekly, Changes), or add ', el('code', {}, 'demo-data.js'), ' to see a sample. ', DATA.error));
-    return;
-  }
   const monday = mondayOf(TODAY);
-  const occ = DATA.occ;
   let from, to;
   if (state.view === 'today') { from = to = TODAY; }
   else if (state.view === 'week') { from = TODAY; to = addDays(monday, 6); }
   else { from = addDays(monday, 7); to = addDays(monday, 13); }
-  const list = occ.filter(o => o.date >= from && o.date <= to);
+  const list = occIn(from, to);
   if (!list.length) {
-    const box = el('div', { class: 'empty' }, state.view === 'today' ? ui.none : ui.none2);
+    const box = el('div', { class: 'empty' }, state.view === 'today' && isPlanned(TODAY) ? ui.none : ui.none2);
     if (state.view === 'today') box.append(el('div', {}, el('button', { class: 'tool', type: 'button', onclick: () => { state.view = 'week'; render(); } }, ui.see)));
     main.append(box); return;
   }
@@ -479,6 +591,127 @@ function renderMain() {
     }
     main.append(renderCard(o, o.date === TODAY, nowMin));
   });
+}
+
+/* ---- month calendar ---- */
+const monthOf = iso => iso.slice(0, 7);
+const shiftMonth = (ym, n) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + n, 1, 12); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
+function monthBounds() {
+  const hz = DATA.hz;
+  return { min: hz.from ? monthOf(hz.from) : shiftMonth(monthOf(TODAY), -6), max: hz.until ? monthOf(hz.until) : shiftMonth(monthOf(TODAY), 6) };
+}
+function clampMonth(ym) { const b = monthBounds(); return ym < b.min ? b.min : ym > b.max ? b.max : ym; }
+const shortTime = (m, lang) => (m % 60 === 0) ? fmt(new Date(2000, 0, 1, m / 60), LANG[lang].locale, { hour: 'numeric' }) : fmtTime(m, lang);
+const MAX_CHIPS = 4;
+
+function chipFor(o, lang, ui) {
+  const nm = namesFor(o, lang);
+  return el('span', { class: 'chip cat-' + catOf(o) + (o.status === 'cancelled' ? ' x' : '') },
+    el('span', { class: 'ci', 'aria-hidden': 'true' }, iconsOf(o).main),
+    el('span', { class: 'ct' }, o.start != null ? shortTime(o.start, lang) : ui.allday),
+    el('span', { class: 'cn' }, nm.main));
+}
+
+function renderCalendar(main) {
+  const lang = state.lang, ui = UI[lang];
+  if (!state.month) state.month = monthOf(TODAY);
+  state.month = clampMonth(state.month);
+  const [Y, M] = state.month.split('-').map(Number);
+  const first = Y + '-' + pad(M) + '-01', last = toISO(new Date(Y, M, 0, 12));
+  const occ = occIn(first, last);
+  const byDate = new Map(); occ.forEach(o => { if (!byDate.has(o.date)) byDate.set(o.date, []); byDate.get(o.date).push(o); });
+  const weekend = occ.some(o => { const g = fromISO(o.date).getDay(); return g === 0 || g === 6; });
+  const cols = weekend ? 7 : 5; state.cols = cols;
+  const b = monthBounds();
+
+  const head = el('div', { class: 'calhead' },
+    el('button', { class: 'nav', type: 'button', 'data-nav': 'prev', 'aria-label': ui.prev, disabled: state.month <= b.min, onclick: () => { state.month = shiftMonth(state.month, -1); render(); } }, '‹'),
+    el('h2', {}, fmt(fromISO(first), LANG[lang].locale, { month: 'long', year: 'numeric' })),
+    el('button', { class: 'nav today', type: 'button', 'data-nav': 'today', onclick: () => { state.month = monthOf(TODAY); render(); } }, ui.today),
+    el('button', { class: 'nav', type: 'button', 'data-nav': 'next', 'aria-label': ui.next2, disabled: state.month >= b.max, onclick: () => { state.month = shiftMonth(state.month, 1); render(); } }, '›'));
+  main.append(head);
+
+  const grid = el('div', { class: 'grid', role: 'grid', style: '--cols:' + cols });
+  const mon = mondayOf(first);
+  for (let k = 0; k < cols; k++) grid.append(el('div', { class: 'dow', role: 'columnheader' }, fmt(fromISO(addDays(mon, k)), LANG[lang].locale, { weekday: 'short' })));
+  const nowMin = nowMinutes();
+  for (let d = first, n = 0; d <= last; d = addDays(d, 1), n++) {
+    const idx = (fromISO(d).getDay() + 6) % 7;
+    if (idx >= cols) continue;
+    const style = (d === first || n === 0) ? 'grid-column-start:' + (idx + 1) : null;
+    const list = byDate.get(d) || [];
+    const planned = isPlanned(d);
+    const act = list.filter(o => o.status !== 'cancelled');
+    const shown = list.slice().sort((x, y) => (x.status === 'cancelled') - (y.status === 'cancelled'));
+    const num = el('span', {}, String(+d.slice(8)));
+    const dn = el('div', { class: 'dn' }, num, d === TODAY ? el('span', { class: 'tag' }, ui.today) : null);
+    if (!planned) { grid.append(el('div', { class: 'cell off', style, 'data-date': d }, dn)); continue; }
+    const hol = act.some(o => catOf(o) === 'notice' && o.start == null);
+    const chips = el('div', { class: 'chips' });
+    shown.slice(0, MAX_CHIPS).forEach(o => chips.append(chipFor(o, lang, ui)));
+    if (shown.length > MAX_CHIPS) chips.append(el('span', { class: 'more' }, '+' + (shown.length - MAX_CHIPS) + ' ' + ui.more));
+    grid.append(el('button', { class: 'cell' + (d === TODAY ? ' today' : '') + (hol ? ' hol' : '') + (list.length ? '' : ' empty'), type: 'button', style, 'data-date': d,
+      'aria-label': fmtDay(d, lang) + (act.length ? ': ' + act.map(o => namesFor(o, lang).main).join(', ') : ''), onclick: () => openDay(d) }, dn, chips));
+  }
+  main.append(grid);
+
+  const legend = el('div', { class: 'legend', 'aria-hidden': 'true' });
+  CATS.forEach(c => legend.append(el('span', { class: 'cat-' + c }, ICON_BY_CAT[c], ui.cats[c])));
+  main.append(legend, el('p', { class: 'hint' }, '👆 ' + ui.tap));
+}
+
+/* ---- day sheet (opens when a day is touched in the calendar) ---- */
+function stepDay(iso, dir) {
+  let d = iso;
+  for (let i = 0; i < 7; i++) {
+    d = addDays(d, dir);
+    const idx = (fromISO(d).getDay() + 6) % 7;
+    if (idx < (state.cols || 7)) return d;
+  }
+  return iso;
+}
+function openDay(iso) {
+  state.dayOpen = iso; state.month = monthOf(iso);
+  player.stop(); activeBtn = failBox = null;
+  renderSheet();
+  const b = document.querySelector('#sheet .closebtn'); if (b) b.focus();
+}
+function closeDay() {
+  const was = state.dayOpen; state.dayOpen = null; player.stop(); activeBtn = failBox = null;
+  renderSheet();
+  if (was) { const c = document.querySelector('.cell[data-date="' + was + '"]'); if (c && c.focus) c.focus({ preventScroll: true }); }
+}
+function renderSheet() {
+  const sh = document.getElementById('sheet');
+  if (!state.dayOpen || !DATA || DATA.error || state.mode !== 'cal') { sh.hidden = true; sh.innerHTML = ''; document.body.classList.remove('lock'); return; }
+  const lang = state.lang, ui = UI[lang], iso = state.dayOpen;
+  sh.innerHTML = ''; sh.hidden = false; document.body.classList.add('lock');
+  const prev = stepDay(iso, -1), next = stepDay(iso, 1);
+  const go = d => () => { state.dayOpen = d; state.month = monthOf(d); player.stop(); activeBtn = failBox = null; render(); const b = document.querySelector('#sheet .closebtn'); if (b) b.focus(); };
+  const list = occIn(iso, iso), nowMin = nowMinutes();
+  const body = el('div', { class: 'sheet-body' });
+  if (!list.length) body.append(el('div', { class: 'empty' }, isPlanned(iso) ? ui.none : ui.none2));
+  list.forEach(o => body.append(renderCard(o, iso === TODAY, nowMin)));
+  sh.append(el('div', { class: 'sheet-bg', onclick: closeDay }),
+    el('div', { class: 'sheet-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': fmtDay(iso, lang) },
+      el('div', { class: 'sheet-head' },
+        el('button', { class: 'nav', type: 'button', 'data-nav': 'dayprev', 'aria-label': ui.prev, disabled: !isPlanned(prev), onclick: go(prev) }, '‹'),
+        el('h2', {}, fmtDay(iso, lang), iso === TODAY ? el('span', { class: 'istoday', style: 'margin-left:10px;font-size:1rem;padding:3px 12px;border-radius:999px;background:var(--orange);color:#fff;white-space:nowrap' }, ui.today) : null),
+        el('button', { class: 'nav', type: 'button', 'data-nav': 'daynext', 'aria-label': ui.next2, disabled: !isPlanned(next), onclick: go(next) }, '›'),
+        el('button', { class: 'closebtn', type: 'button', onclick: closeDay }, '✕ ' + ui.close)),
+      body));
+}
+
+function renderMain() {
+  const main = document.getElementById('main'); main.innerHTML = '';
+  const ui = UI[state.lang];
+  if (!DATA) { main.append(el('div', { class: 'empty' }, ui.loading)); return; }
+  if (DATA.error) {
+    main.append(el('div', { class: 'setup' }, el('strong', {}, 'Setup needed. '),
+      'Open ', el('code', {}, 'config.js'), ' and paste your three Google Sheet links (Events, Weekly, Changes), or add ', el('code', {}, 'demo-data.js'), ' to see a sample. ', DATA.error));
+    return;
+  }
+  if (state.mode === 'cal') renderCalendar(main); else renderList(main);
 }
 
 function renderFoot() {
@@ -498,7 +731,7 @@ function setSize(i) {
 function render() {
   player.stop(); activeBtn = failBox = null;
   document.documentElement.lang = ({ en:'en', zh:'zh-CN', ms:'ms', ta:'ta', yue:'yue-HK' }[state.lang] || 'zh-CN');
-  renderTop(); renderMain(); renderFoot();
+  renderTop(); renderMain(); renderSheet(); renderFoot();
 }
 
 /* ------------------------------ loading data ------------------------------ */
@@ -512,9 +745,12 @@ function buildData(texts, extra) {
   const events = parseCSV(texts.events), weekly = parseCSV(texts.weekly), changes = parseCSV(texts.changes || '');
   const lib = new Map(); events.forEach(r => { if ((r.event || '').trim()) lib.set(keyOf(r.event), r); });
   const langs = LANGS.filter(l => l.code === 'en' || events.some(r => (r['desc_' + l.code] || '').trim() || (r['audio_' + l.code] || '').trim())).map(l => l.code);
-  const monday = mondayOf(TODAY);
-  const occ = buildOccurrences(lib, weekly, changes, monday, addDays(monday, 13));
-  return Object.assign({ lib, weekly, changes, langs, occ, stamp: Date.now() }, extra || {});
+  const hz = { from: CFG.scheduleFrom ? (parseDate(CFG.scheduleFrom) || '') : '', until: CFG.scheduleUntil ? (parseDate(CFG.scheduleUntil) || '') : '' };
+  if (!hz.until) {                         // automatic: end of the last month that has a row in Changes
+    let max = ''; changes.forEach(r => { const d = parseDate(r.date); if (d && d > max) max = d; });
+    if (max) { const [y, m] = max.split('-').map(Number); hz.until = toISO(new Date(y, m, 0, 12)); }
+  }
+  return Object.assign({ lib, weekly, changes, langs, hz, stamp: Date.now() }, extra || {});
 }
 async function load() {
   const S = CFG.sheets || {};
@@ -543,8 +779,8 @@ let lastTouch = Date.now();
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { lastTouch = Date.now(); }, { passive: true }));
 if (IDLE > 0) setInterval(() => {
   if (Date.now() - lastTouch < IDLE * 1000) return;
-  if (state.lang !== 'en' || state.view !== 'today' || window.scrollY > 0) {
-    state.lang = 'en'; state.view = 'today'; render(); window.scrollTo(0, 0);
+  if (state.lang !== 'en' || state.view !== 'today' || state.mode !== 'list' || state.dayOpen || window.scrollY > 0) {
+    state.lang = 'en'; state.view = 'today'; state.mode = 'list'; state.dayOpen = null; state.month = ''; render(); window.scrollTo(0, 0);
   }
 }, 1000);
 if (hasTTS) {
@@ -557,7 +793,8 @@ if (CFG.refreshMinutes > 0 && CFG.sheets && CFG.sheets.events) setInterval(() =>
 setSize(state.sizeIdx);
 render();
 load();
-window.__cal = { parseCSV, parseTime, parseDate, buildOccurrences, state, render };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.dayOpen) closeDay(); });
+window.__cal = { parseCSV, parseTime, parseDate, buildOccurrences, state, render, occIn, openDay, closeDay, get data() { return DATA; } };
 })();
 </script>
 </body>

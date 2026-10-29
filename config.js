@@ -13,9 +13,9 @@ window.CENTRE_CONFIG = {
   title: "PCS Cedar Tree AAC @ Potong Pasir 108",
 
   sheets: {
-    events:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCwhXW0SWh5NKecxsxXZXvrJVHt-Wcrpc6pH1jRZKkxsvER63Vk_GLc7f2Oj2RHdueJ7La_ukWErBH/pub?gid=447312105&single=true&output=csv",   // link for the Events tab
-    weekly:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCwhXW0SWh5NKecxsxXZXvrJVHt-Wcrpc6pH1jRZKkxsvER63Vk_GLc7f2Oj2RHdueJ7La_ukWErBH/pub?gid=549861951&single=true&output=csv",   // link for the Weekly tab
-    changes: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCwhXW0SWh5NKecxsxXZXvrJVHt-Wcrpc6pH1jRZKkxsvER63Vk_GLc7f2Oj2RHdueJ7La_ukWErBH/pub?gid=554360820&single=true&output=csv"    // link for the Changes tab
+    events:  "",   // link for the Events tab
+    weekly:  "",   // link for the Weekly tab
+    changes: ""    // link for the Changes tab
   },
 
   defaultLocation: "Block 108 HDB Potong Pasir",
@@ -27,6 +27,12 @@ window.CENTRE_CONFIG = {
     "Activities may be cancelled if there are other events or workshops 如果有其他活动或工作坊，将取消原定活动",
     "Blk 108 Potong Pasir Avenue 1 #01-488 S350108  |  Tel/WhatsApp: 8061 0527"
   ],
+
+  // The calendar only shows dates from scheduleFrom up to the end of the last month that has a row in
+  // the Changes tab (so a month nobody has filled in yet says "Nothing planned yet" instead of showing a
+  // wrong timetable). Leave blank for no start limit / automatic end, or type a date like "2026-12-31".
+  scheduleFrom:  "2026-10-19",
+  scheduleUntil: "",
 
   refreshMinutes: 15,   // how often the page re-reads the Google Sheet
   idleSeconds: 120      // after this long untouched, go back to Today + English (0 = never)
