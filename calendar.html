@@ -150,6 +150,13 @@
   .closebtn { min-height:60px; padding:0 22px; border-radius:16px; border:0; background:var(--orange); color:#fff; font-size:1.3rem; font-weight:800; box-shadow:0 4px 0 var(--orange-dark); }
   .sheet .empty { margin:0; }
 
+  .stafflink { margin-top:14px; background:none; border:0; color:var(--muted); font-size:.9rem; text-decoration:underline; padding:8px 0; }
+  .vrow { display:grid; grid-template-columns:130px 1fr auto; gap:10px; align-items:center; margin:0 0 12px; }
+  .vrow label { font-weight:800; font-size:1.1rem; }
+  .vrow select { font:inherit; font-size:1.05rem; padding:12px 10px; border-radius:12px; border:2px solid var(--line); background:#fff; min-width:0; width:100%; }
+  .vhelp { background:var(--card); border:2px solid var(--line); border-radius:16px; padding:14px 16px; margin:0 0 16px; font-size:1.05rem; line-height:1.5; }
+  .vhelp ol { margin:6px 0 0 20px; padding:0; }
+  @media (max-width:640px) { .vrow { grid-template-columns:1fr; } }
   footer { margin-top:30px; padding-top:14px; border-top:2px solid var(--line); color:var(--muted); font-size:1.05rem; }
   footer p { margin:4px 0; }
   footer .meta-small { font-size:.9rem; margin-top:12px; }
@@ -189,6 +196,7 @@
   <footer id="foot"></footer>
 </div>
 <div class="sheet" id="sheet" hidden></div>
+<div class="sheet" id="staff" hidden></div>
 
 <script src="config.js"></script>
 <script src="demo-data.js"></script>
@@ -329,7 +337,7 @@ function buildOccurrences(lib, weekly, changes, fromISOd, toISOd) {
       matches.forEach(o => { occ.splice(occ.indexOf(o), 1); });
     }
   });
-  occ.forEach(o => { o.lib = lib.get(keyOf(o.event)) || {}; });
+  occ.forEach(o => { if (o.title && lib.has(keyOf(o.title))) { o.event = o.title; o.title = ''; } o.lib = lib.get(keyOf(o.event)) || {}; });
   occ.sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? -1) - (b.start ?? -1) || a.event.localeCompare(b.event));
   return occ;
 }
@@ -338,11 +346,18 @@ function buildOccurrences(lib, weekly, changes, fromISOd, toISOd) {
 const hasTTS = 'speechSynthesis' in window;
 if (hasTTS) { speechSynthesis.getVoices(); }
 const normLang = l => (l || '').replace('_', '-').toLowerCase();
-const voiceScore = v => (/premium|enhanced|natural/i.test(v.name || '') ? 2 : 0) + (v.localService ? 1 : 0);
+const voiceScore = v => {
+  const n = (v.name || '') + ' ' + (v.voiceURI || ''); let s = 0;
+  if (/premium/i.test(n)) s += 4; if (/enhanced/i.test(n)) s += 3; if (/siri|neural|natural|online/i.test(n)) s += 3;
+  if (/google/i.test(n)) s += 1; if (/compact|espeak/i.test(n)) s -= 3; if (v.localService) s += 1;
+  return s;
+};
 function pickVoice(def) {
   if (!hasTTS || !def.voices.length) return null;
   const vs = speechSynthesis.getVoices(); if (!vs.length) return null;
   const best = list => list.sort((a, b) => voiceScore(b) - voiceScore(a))[0];
+  const chosen = store('cal-voice-' + def.code);               // picked by staff in the voice setup panel
+  if (chosen) { const m = vs.find(v => v.name === chosen); if (m) return m; }
   for (const c of def.voices) { const m = vs.filter(v => normLang(v.lang) === normLang(c)); if (m.length) return best(m); }
   if (def.base) {
     const base = normLang(def.voices[0]).split('-')[0];
@@ -373,27 +388,31 @@ function createPlayer(onState, onFail) {
   async function play(o) {                 // {text, def, audioUrl, slow}
     const was = hasTTS && (speechSynthesis.speaking || speechSynthesis.pending);
     stop(); const my = token;
+    const speak = () => {                  // the device's own voice
+      const voice = pickVoice(o.def);
+      if (!voice || !(o.text || '').trim()) { onState(false); onFail('novoice'); return; }
+      const parts = splitSentences(o.text); let i = 0; onState(true);
+      const next = () => {
+        if (my !== token) return;
+        if (i >= parts.length) { onState(false); return; }
+        const u = new SpeechSynthesisUtterance(parts[i++]);
+        u.voice = voice; u.lang = voice.lang; u.rate = o.slow ? RATE_SLOW : RATE_NORMAL; u.onend = next;
+        u.onerror = e => { if (my !== token || e.error === 'canceled' || e.error === 'interrupted') return; onState(false); onFail('fail'); };
+        keep.push(u); if (keep.length > 12) keep.shift();
+        speechSynthesis.speak(u);
+      };
+      if (was) setTimeout(next, 90); else next();
+    };
     if (o.audioUrl) {
       audio = new Audio(o.audioUrl); audio.playbackRate = o.slow ? AUDIO_SLOW : AUDIO_NORMAL;
+      const giveUp = () => { if (my !== token) return; audio = null; if (o.text && hasTTS && o.def.voices.length) speak(); else { onState(false); onFail('fail'); } };
       audio.onended = () => { if (my === token) onState(false); };
-      audio.onerror = () => { if (my === token) { onState(false); onFail('fail'); } };
+      audio.onerror = giveUp;
       onState(true);
-      try { await audio.play(); } catch (e) { if (my === token) { onState(false); onFail('fail'); } }
+      try { await audio.play(); } catch (e) { giveUp(); }
       return;
     }
-    const voice = pickVoice(o.def);
-    if (!voice || !(o.text || '').trim()) { onFail('novoice'); return; }
-    const parts = splitSentences(o.text); let i = 0; onState(true);
-    const next = () => {
-      if (my !== token) return;
-      if (i >= parts.length) { onState(false); return; }
-      const u = new SpeechSynthesisUtterance(parts[i++]);
-      u.voice = voice; u.lang = voice.lang; u.rate = o.slow ? RATE_SLOW : RATE_NORMAL; u.onend = next;
-      u.onerror = e => { if (my !== token || e.error === 'canceled' || e.error === 'interrupted') return; onState(false); onFail('fail'); };
-      keep.push(u); if (keep.length > 12) keep.shift();
-      speechSynthesis.speak(u);
-    };
-    if (was) setTimeout(next, 90); else next();
+    speak();
   }
   return { play, stop };
 }
@@ -437,6 +456,21 @@ const fmtDay = (iso, lang) => fmt(fromISO(iso), LANG[lang].locale, { weekday: 'l
 function fmtTime(min, lang) { const d = new Date(2000, 0, 1, Math.floor(min / 60), min % 60); return fmt(d, LANG[lang].locale, { hour: 'numeric', minute: '2-digit' }); }
 const resolveAsset = n => { n = (n || '').trim(); if (!n) return ''; if (/^(https?:|blob:|data:)/i.test(n)) return n; try { return new URL(n, location.href).href; } catch (e) { return n; } };
 
+/* ---------- clear pre-recorded voices (English / Mandarin) ----------
+   audio/manifest.json lists the recordings that exist. A recording is only used while the words it says are still
+   exactly what the card says (the file name carries a fingerprint of the text), so editing a description
+   automatically falls back to the device voice instead of playing out-of-date audio. */
+const AUDIO_DIR = 'audio/';
+let AUDIO_SET = new Set();
+function hash32(str) {
+  let h = 0x811c9dc5; const b = new TextEncoder().encode(str);
+  for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0');
+}
+async function loadManifest() {
+  try { const r = await fetch(AUDIO_DIR + 'manifest.json?_=' + Date.now(), { cache: 'no-store' }); if (r.ok) { AUDIO_SET = new Set(await r.json()); render(); } } catch (e) {}
+}
+
 /* --------------------------- what a card shows --------------------------- */
 function descFor(o, lang) {
   const l = o.lib || {};
@@ -445,14 +479,22 @@ function descFor(o, lang) {
   return t || l.desc_en || '';
 }
 function namesFor(o, lang) {
-  const zh = o.title ? '' : ((o.lib || {}).name_zh || '');
+  const zh = (o.lib || {}).name_zh || '';
   const en = o.title || o.event;
   if (ZH_SCRIPT.includes(lang) && zh) return { main: zh, sub: en };
   return { main: en, sub: lang === 'en' ? zh : '' };
 }
+function spokenFor(o, lang) {              // exactly what is read aloud (name, then description)
+  const nm = namesFor(o, lang), head = lang === 'ta' ? '' : nm.main;   // a Latin-letter title sounds unclear in a Tamil voice
+  return (head ? head + '. ' : '') .concat(descFor(o, lang)).replace(/\s+/g, ' ').trim();
+}
+function audioUrlFor(o, lang) {
+  const own = ((o.lib || {})['audio_' + lang] || '').trim(); if (own) return resolveAsset(own);
+  const key = lang + '-' + hash32(lang + '|' + spokenFor(o, lang));
+  return AUDIO_SET.has(key) ? resolveAsset(AUDIO_DIR + key + '.mp3') : '';
+}
 function canListen(o, lang) {
-  const l = o.lib || {};
-  if ((l['audio_' + lang] || '').trim()) return true;
+  if (audioUrlFor(o, lang)) return true;
   return !!descFor(o, lang) && voiceMaybe(LANG[lang]);
 }
 
@@ -560,7 +602,7 @@ function renderCard(o, isToday, nowMin) {
       if (btn.classList.contains('playing')) { player.stop(); return; }
       document.querySelectorAll('.note').forEach(n => { n.hidden = true; });
       activeBtn = btn; failBox = note;
-      player.play({ text: nm.main + '. ' + text, def: LANG[lang], audioUrl: resolveAsset(l['audio_' + lang]), slow: state.slow });
+      player.play({ text: spokenFor(o, lang), def: LANG[lang], audioUrl: audioUrlFor(o, lang), slow: state.slow });
     });
     body.append(btn, note);
   }
@@ -714,9 +756,49 @@ function renderMain() {
   if (state.mode === 'cal') renderCalendar(main); else renderList(main);
 }
 
+/* ---- staff voice setup: pick the clearest voice per language on this device ---- */
+const SAMPLE = { en:'Welcome to the centre. Today we have Rummikub at two pm.', zh:'欢迎来到中心。今天下午两点有拉密牌。', ms:'Selamat datang ke pusat. Hari ini ada Rummikub pada pukul dua petang.',
+  ta:'மையத்திற்கு வரவேற்கிறோம். இன்று பிற்பகல் இரண்டு மணிக்கு ரம்மிகுப் உள்ளது.', yue:'歡迎嚟到中心。今日下晝兩點有拉密牌。' };
+const VOICE_MATCH = { en: l => /^en/.test(l), zh: l => /^zh/.test(l) && !/hk|yue/.test(l), ms: l => /^ms/.test(l), ta: l => /^ta/.test(l), yue: l => /^yue|^zh-hk/.test(l) };
+let testPlayer = null;
+function openVoices() { player.stop(); const st = document.getElementById('staff'); st.hidden = false; document.body.classList.add('lock'); renderVoices(); const b = st.querySelector('.closebtn'); if (b) b.focus(); }
+function closeVoices() { if (hasTTS) speechSynthesis.cancel(); const st = document.getElementById('staff'); st.hidden = true; st.innerHTML = ''; if (!state.dayOpen) document.body.classList.remove('lock'); }
+function renderVoices() {
+  const st = document.getElementById('staff'); st.innerHTML = '';
+  const vs = hasTTS ? speechSynthesis.getVoices() : [];
+  const body = el('div', { class: 'sheet-body' });
+  body.append(el('div', { class: 'vhelp' }, el('strong', {}, 'For staff only. '),
+    'The spoken voices come from this iPad, so quality depends on the voices installed. To get clearer ones:',
+    el('ol', {}, el('li', {}, 'On the iPad open Settings → Accessibility → Spoken Content → Voices.'),
+      el('li', {}, 'Choose a language, then download a voice marked Enhanced or Premium (e.g. English, Chinese, Malay, Tamil).'),
+      el('li', {}, 'Come back here, press Test on each row, and pick the clearest voice.'),
+      el('li', {}, 'Your choice is remembered on this iPad.'))));
+  if (!hasTTS || !vs.length) body.append(el('div', { class: 'note' }, 'No voices were found on this device yet. Wait a moment and reopen this panel.'));
+  Object.keys(VOICE_MATCH).forEach(code => {
+    const def = LANG[code];
+    const list = vs.filter(v => VOICE_MATCH[code](normLang(v.lang))).sort((a, b) => voiceScore(b) - voiceScore(a) || a.name.localeCompare(b.name));
+    const sel = el('select', { 'aria-label': def.sub });
+    sel.append(el('option', { value: '' }, 'Automatic (best match)'));
+    list.forEach(v => sel.append(el('option', { value: v.name }, v.name + ' (' + v.lang + ')' + (/premium/i.test(v.name) ? ' ★★' : /enhanced/i.test(v.name) ? ' ★' : ''))));
+    sel.value = store('cal-voice-' + code) || '';
+    if (sel.value !== (store('cal-voice-' + code) || '')) sel.value = '';
+    sel.addEventListener('change', () => { try { if (sel.value) localStorage.setItem('cal-voice-' + code, sel.value); else localStorage.removeItem('cal-voice-' + code); } catch (e) {} });
+    const test = el('button', { class: 'tool', type: 'button', onclick: () => {
+      if (!hasTTS) return; speechSynthesis.cancel();
+      const v = sel.value ? list.find(x => x.name === sel.value) : (list[0] || null);
+      const u = new SpeechSynthesisUtterance(SAMPLE[code]); if (v) { u.voice = v; u.lang = v.lang; } else u.lang = def.locale; u.rate = RATE_NORMAL; speechSynthesis.speak(u);
+    } }, '▶ Test');
+    body.append(el('div', { class: 'vrow' }, el('label', {}, def.label + ' · ' + def.sub), list.length ? sel : el('span', { class: 'note' }, 'No ' + def.sub + ' voice on this device'), test));
+  });
+  st.append(el('div', { class: 'sheet-bg', onclick: closeVoices }),
+    el('div', { class: 'sheet-panel', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Voice setup' },
+      el('div', { class: 'sheet-head' }, el('h2', {}, '🔊 Voice setup'), el('button', { class: 'closebtn', type: 'button', onclick: closeVoices }, '✕ Close')), body));
+}
+
 function renderFoot() {
   const f = document.getElementById('foot'); f.innerHTML = '';
   (CFG.footer || []).forEach(t => f.append(el('p', {}, t)));
+  f.append(el('button', { class: 'stafflink', type: 'button', onclick: openVoices }, 'Staff: voice setup'));
   if (DATA && DATA.stamp) {
     const d = new Date(DATA.stamp);
     f.append(el('p', { class: 'meta-small' }, UI[state.lang].updated + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) +
@@ -780,7 +862,7 @@ let lastTouch = Date.now();
 if (IDLE > 0) setInterval(() => {
   if (Date.now() - lastTouch < IDLE * 1000) return;
   if (state.lang !== 'en' || state.view !== 'today' || state.mode !== 'list' || state.dayOpen || window.scrollY > 0) {
-    state.lang = 'en'; state.view = 'today'; state.mode = 'list'; state.dayOpen = null; state.month = ''; render(); window.scrollTo(0, 0);
+    state.lang = 'en'; state.view = 'today'; state.mode = 'list'; state.dayOpen = null; state.month = ''; closeVoices(); render(); window.scrollTo(0, 0);
   }
 }, 1000);
 if (hasTTS) {
@@ -793,7 +875,8 @@ if (CFG.refreshMinutes > 0 && CFG.sheets && CFG.sheets.events) setInterval(() =>
 setSize(state.sizeIdx);
 render();
 load();
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.dayOpen) closeDay(); });
+loadManifest();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!document.getElementById('staff').hidden) closeVoices(); else if (state.dayOpen) closeDay(); } });
 window.__cal = { parseCSV, parseTime, parseDate, buildOccurrences, state, render, occIn, openDay, closeDay, get data() { return DATA; } };
 })();
 </script>
